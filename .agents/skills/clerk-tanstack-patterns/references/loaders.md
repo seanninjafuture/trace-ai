@@ -69,6 +69,6 @@ function Projects() {
 
 ## Server vs Client Data
 
-Loaders run on the server during SSR and on the client during navigation. `auth()` works in both because it reads from the Clerk middleware context.
+Loaders can run on the server during SSR and on the client during navigation. Keep `auth()` inside server-only boundaries (for example, `createServerFn`), then pass auth-derived data into loader context.
 
 [Docs](https://clerk.com/docs/tanstack-react-start/getting-started/quickstart)

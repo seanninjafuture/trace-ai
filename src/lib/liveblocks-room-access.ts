@@ -6,6 +6,10 @@ const MAX_ROOM_ID_LENGTH = 128;
  * Room IDs must be namespaced to the authenticated Clerk userId.
  */
 export function canUserAccessRoom(userId: string, roomId: string): boolean {
+  if (!userId || !ROOM_ID_PATTERN.test(userId)) {
+    return false;
+  }
+
   if (!roomId || roomId.length > MAX_ROOM_ID_LENGTH) {
     return false;
   }

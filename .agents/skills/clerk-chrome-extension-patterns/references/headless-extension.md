@@ -53,17 +53,21 @@ async function getSessionToken(): Promise<string | null> {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete') return
 
-  const token = await getSessionToken()
-  if (!token) return
+  try {
+    const token = await getSessionToken()
+    if (!token) return
 
-  await fetch('https://api.yourapp.com/page-visit', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ url: tab.url }),
-  })
+    await fetch('https://api.yourapp.com/page-visit', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url: tab.url }),
+    })
+  } catch (error) {
+    console.error('[headless-extension] page-visit failed', error)
+  }
 })
 ```
 

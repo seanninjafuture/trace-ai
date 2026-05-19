@@ -19,6 +19,7 @@
 - src/components/canvas — Owns the live node-based workspace, canvas rendering, and real-time state listeners.
 - src/services/ai — Owns the prompt engineering, simulation payload generation, and LLM streaming logic.
 - src/server/actions — Owns the secure database mutations, state saves, and validation gates.
+- src/app/api/projects — Owns REST project CRUD (list, create, rename, delete) backed by Prisma.
 
 ## Storage Model
 

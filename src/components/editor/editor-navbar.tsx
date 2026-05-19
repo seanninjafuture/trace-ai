@@ -1,3 +1,4 @@
+import { UserButton } from "@clerk/nextjs";
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,11 +47,12 @@ export function EditorNavbar({ projectName = "Untitled Architecture" }) {
         ))}
       </div>
 
-      <div className="flex flex-1 justify-end">
+      <div className="flex flex-1 items-center justify-end gap-3">
         <Button type="button" disabled className="gap-2">
           <Download className="size-5" />
           Export Playbook
         </Button>
+        <UserButton />
       </div>
     </header>
   );

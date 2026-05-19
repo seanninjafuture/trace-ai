@@ -66,6 +66,7 @@ export function ProjectDialogs() {
           className="flex flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
+            if (!createName.trim()) return;
             handleCreateSubmit();
           }}
         >
@@ -120,6 +121,7 @@ export function ProjectDialogs() {
           className="flex flex-col gap-2"
           onSubmit={(event) => {
             event.preventDefault();
+            if (!renameName.trim()) return;
             handleRenameSubmit();
           }}
         >
@@ -134,6 +136,7 @@ export function ProjectDialogs() {
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
+                  if (!renameName.trim()) return;
                   handleRenameSubmit();
                 }
               }}

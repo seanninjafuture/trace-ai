@@ -65,9 +65,12 @@ export function useProjectDialogs() {
 
   const runWithLoading = useCallback(async (action: () => void) => {
     setIsLayoutLoading(true);
-    await delay(LOAD_DELAY_MS);
-    action();
-    setIsLayoutLoading(false);
+    try {
+      await delay(LOAD_DELAY_MS);
+      action();
+    } finally {
+      setIsLayoutLoading(false);
+    }
   }, []);
 
   const selectProject = useCallback(

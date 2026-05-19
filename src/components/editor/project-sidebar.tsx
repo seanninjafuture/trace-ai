@@ -58,7 +58,7 @@ function ProjectRow({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 data-popup-open:opacity-100"
+                className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 data-popup-open:opacity-100"
                 aria-label={`Actions for ${project.name}`}
               />
             }

@@ -2,7 +2,7 @@ import type { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
 
-import { deleteClerkUser, syncClerkUser } from "@/lib/sync-clerk-user";
+import { deleteClerkUser, syncClerkUser } from "@/server/actions/sync-clerk-user";
 
 export async function POST(req: Request) {
   const webhookSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;

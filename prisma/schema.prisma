@@ -1,19 +1,58 @@
+// ORM: Prisma — Database host: Supabase PostgreSQL only (see .env.example)
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ProjectStatus {
+  DRAFT
+  ARCHIVED
+
+  @@map("project_status")
 }
 
 model User {
-  id          String   @id
+  id          String    @id
   email       String?
-  avatarUrl   String?  @map("avatar_url")
-  displayName String?  @map("display_name")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  avatarUrl   String?   @map("avatar_url")
+  displayName String?   @map("display_name")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  projects    Project[]
 
   @@map("users")
+}
+
+model Project {
+  id             String                @id @default(cuid())
+  ownerId        String                @map("owner_id")
+  name           String
+  description    String?
+  status         ProjectStatus         @default(DRAFT)
+  canvasJsonPath String                @map("canvas_json_path")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+  owner          User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  collaborators  ProjectCollaborator[]
+
+  @@index([ownerId, createdAt])
+  @@map("projects")
+}
+
+model ProjectCollaborator {
+  id                String   @id @default(cuid())
+  projectId         String   @map("project_id")
+  collaboratorEmail String   @map("collaborator_email")
+  createdAt         DateTime @default(now()) @map("created_at")
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, collaboratorEmail])
+  @@index([collaboratorEmail])
+  @@index([projectId, createdAt])
+  @@map("project_collaborators")
 }

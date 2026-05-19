@@ -5,6 +5,7 @@ import {
   getVerifiedUserEmail,
   listProjectsForUser,
 } from "@/lib/projects-api";
+import { ensureClerkUserInDatabase } from "@/server/actions/sync-clerk-user";
 import { slugifyProjectName } from "@/lib/slugify";
 import type { WorkspaceProject } from "@/types/project";
 
@@ -36,6 +37,8 @@ export const listEditorProjectsForCurrentUser = cache(
     if (!userId) {
       return { ownedProjects: [], sharedProjects: [] };
     }
+
+    await ensureClerkUserInDatabase(userId);
 
     const email = await getVerifiedUserEmail();
     const projects = await listProjectsForUser(userId, email);

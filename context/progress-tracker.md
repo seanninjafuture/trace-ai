@@ -51,4 +51,5 @@ Update this file after every meaningful implementation change.
 - Webhook sync requires `CLERK_WEBHOOK_SIGNING_SECRET` and `DATABASE_URL`; Liveblocks auth requires `LIVEBLOCKS_SECRET_KEY`
 - Supabase pooler blocks Prisma advisory locks: use `npm run db:push` for schema sync; if `db:migrate:deploy` hits P1002, run `npm run db:unlock-migrate` then retry, or sync history via `scripts/sql/mark-add-projects-applied.sql`
 - Do not wrap `DATABASE_URL` / `DIRECT_URL` in quotes in `.env.local`
+- Clerk users are upserted on demand via `ensureClerkUserInDatabase` when webhooks lag in local dev (fixes `projects_owner_id_fkey` on project create)
 - Remote Postgres TLS: `src/lib/pg-pool-config.ts` relaxes cert verification for Supabase unless `DATABASE_SSL_REJECT_UNAUTHORIZED=true` (fixes Windows self-signed chain errors)

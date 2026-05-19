@@ -34,6 +34,7 @@ export function useProjectActions({
   );
   const [isProjectSidebarOpen, setProjectSidebarOpen] = useState(false);
   const [loadingCount, setLoadingCount] = useState(0);
+  const [actionError, setActionError] = useState<string | null>(null);
   const isLayoutLoading = loadingCount > 0;
 
   const allProjects = useMemo(
@@ -65,6 +66,7 @@ export function useProjectActions({
 
   const openCreate = useCallback(() => {
     setCreateName("");
+    setActionError(null);
     setActiveDialog("create");
   }, []);
 
@@ -99,6 +101,7 @@ export function useProjectActions({
     if (!name) return;
 
     void runWithLoading(async () => {
+      setActionError(null);
       const canvasJsonPath = generateProjectRoomId(name);
 
       const response = await fetch("/api/projects", {
@@ -108,6 +111,12 @@ export function useProjectActions({
       });
 
       if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        setActionError(
+          payload?.error ?? "Could not create project. Try again."
+        );
         return;
       }
 
@@ -180,6 +189,7 @@ export function useProjectActions({
     isProjectSidebarOpen,
     setProjectSidebarOpen,
     isLayoutLoading,
+    actionError,
     openCreate,
     openRename,
     openDelete,

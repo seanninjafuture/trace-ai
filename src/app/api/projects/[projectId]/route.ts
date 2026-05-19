@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import {
-  requireAuthenticatedUserId,
+  requireAuthenticatedUserInDatabase,
   requireProjectOwner,
 } from "@/lib/projects-api";
 
@@ -11,7 +11,7 @@ type RouteContext = {
 };
 
 export async function PATCH(req: Request, context: RouteContext) {
-  const authResult = await requireAuthenticatedUserId();
+  const authResult = await requireAuthenticatedUserInDatabase();
   if ("response" in authResult) {
     return authResult.response;
   }
@@ -47,7 +47,7 @@ export async function PATCH(req: Request, context: RouteContext) {
 }
 
 export async function DELETE(_req: Request, context: RouteContext) {
-  const authResult = await requireAuthenticatedUserId();
+  const authResult = await requireAuthenticatedUserInDatabase();
   if ("response" in authResult) {
     return authResult.response;
   }

@@ -24,6 +24,7 @@ export function ProjectDialogs() {
     handleCreateSubmit,
     handleRenameSubmit,
     handleDeleteConfirm,
+    actionError,
   } = useEditorWorkspace();
 
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -87,6 +88,9 @@ export function ProjectDialogs() {
               {createRoomIdPreview}
             </span>
           </p>
+          {actionError ? (
+            <p className="text-sm text-state-error">{actionError}</p>
+          ) : null}
         </form>
       </DialogShell>
 

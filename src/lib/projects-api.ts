@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { ensureClerkUserInDatabase } from "@/server/actions/sync-clerk-user";
 
 export const UNTITLED_PROJECT_NAME = "Untitled Project";
 
@@ -24,6 +25,29 @@ export async function requireAuthenticatedUserId(): Promise<
   }
 
   return { userId };
+}
+
+export async function requireAuthenticatedUserInDatabase(): Promise<
+  { userId: string } | { response: NextResponse }
+> {
+  const authResult = await requireAuthenticatedUserId();
+  if ("response" in authResult) {
+    return authResult;
+  }
+
+  try {
+    await ensureClerkUserInDatabase(authResult.userId);
+  } catch (error) {
+    console.error("Failed to sync Clerk user to database", error);
+    return {
+      response: NextResponse.json(
+        { error: "Could not sync user profile" },
+        { status: 500 }
+      ),
+    };
+  }
+
+  return authResult;
 }
 
 export async function getVerifiedUserEmail(): Promise<string | null> {

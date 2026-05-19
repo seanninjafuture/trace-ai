@@ -4,13 +4,13 @@ import {
   getVerifiedUserEmail,
   listProjectsForUser,
   parseOptionalDescription,
-  requireAuthenticatedUserId,
+  requireAuthenticatedUserInDatabase,
   resolveProjectName,
 } from "@/lib/projects-api";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const authResult = await requireAuthenticatedUserId();
+  const authResult = await requireAuthenticatedUserInDatabase();
   if ("response" in authResult) {
     return authResult.response;
   }
@@ -22,7 +22,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const authResult = await requireAuthenticatedUserId();
+  const authResult = await requireAuthenticatedUserInDatabase();
   if ("response" in authResult) {
     return authResult.response;
   }
@@ -35,13 +35,16 @@ export async function POST(req: Request) {
     body = {};
   }
 
+  const canvasJsonPath =
+    typeof body.canvasJsonPath === "string" ? body.canvasJsonPath.trim() : "";
+
   const project = await prisma.project.create({
     data: {
       ownerId: authResult.userId,
       name: resolveProjectName(body.name),
       description: parseOptionalDescription(body.description),
       status: "DRAFT",
-      canvasJsonPath: "",
+      canvasJsonPath,
     },
   });
 

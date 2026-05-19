@@ -17,13 +17,14 @@ export function ProjectDialogs() {
     closeDialog,
     createName,
     setCreateName,
-    createSlug,
+    createRoomIdPreview,
     renameName,
     setRenameName,
     targetProject,
     handleCreateSubmit,
     handleRenameSubmit,
     handleDeleteConfirm,
+    actionError,
   } = useEditorWorkspace();
 
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +46,7 @@ export function ProjectDialogs() {
           if (!open) closeDialog();
         }}
         title="Create Simulation Project"
-        description="Name your architecture workspace. This is stored locally for now."
+        description="Name your architecture workspace. The Liveblocks room id is generated when you create the project."
         footer={
           <>
             <DialogClose render={<Button type="button" variant="outline" />}>
@@ -82,11 +83,14 @@ export function ProjectDialogs() {
             />
           </label>
           <p className="font-mono text-xs text-text-muted">
-            traceai.dev/workspace/
+            Liveblocks room:{" "}
             <span className="text-text-primary">
-              {createSlug || "my-system-slug"}
+              {createRoomIdPreview}
             </span>
           </p>
+          {actionError ? (
+            <p className="text-sm text-state-error">{actionError}</p>
+          ) : null}
         </form>
       </DialogShell>
 
@@ -172,8 +176,18 @@ export function ProjectDialogs() {
         overlayClassName={projectDialogOverlayClassName}
       >
         <p className="text-sm leading-relaxed text-state-error">
-          Deleting this workspace will permanently wipe out its system nodes,
-          graph configurations, and generated incident playbooks.
+          {targetProject ? (
+            <>
+              Deleting <strong>{targetProject.name}</strong> will permanently
+              wipe out its system nodes, graph configurations, and generated
+              incident playbooks.
+            </>
+          ) : (
+            <>
+              Deleting this workspace will permanently wipe out its system
+              nodes, graph configurations, and generated incident playbooks.
+            </>
+          )}
         </p>
       </DialogShell>
     </>

@@ -56,7 +56,7 @@ export function AuthShell({ children }: AuthShellProps) {
       </aside>
 
       <main className="flex min-h-screen items-center justify-center bg-bg-base px-6 py-10 sm:min-h-0 sm:px-10 sm:py-12">
-        <div className="w-full max-w-md font-sans [&_.cl-rootBox]:w-full [&_.cl-cardBox]:w-full">
+        <div className="w-full max-w-md font-sans">
           {children}
         </div>
       </main>

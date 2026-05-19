@@ -28,7 +28,8 @@ export function useProjectDialogs() {
   const [renameName, setRenameName] = useState("");
   const [targetProject, setTargetProject] = useState<MockProject | null>(null);
   const [isProjectSidebarOpen, setProjectSidebarOpen] = useState(false);
-  const [isLayoutLoading, setIsLayoutLoading] = useState(false);
+  const [loadingCount, setLoadingCount] = useState(0);
+  const isLayoutLoading = loadingCount > 0;
 
   const allProjects = useMemo(
     () => [...ownedProjects, ...sharedProjects],
@@ -48,12 +49,14 @@ export function useProjectDialogs() {
   }, []);
 
   const openRename = useCallback((project: MockProject) => {
+    if (!project.owned) return;
     setTargetProject(project);
     setRenameName(project.name);
     setActiveDialog("rename");
   }, []);
 
   const openDelete = useCallback((project: MockProject) => {
+    if (!project.owned) return;
     setTargetProject(project);
     setActiveDialog("delete");
   }, []);
@@ -63,15 +66,18 @@ export function useProjectDialogs() {
     setTargetProject(null);
   }, []);
 
-  const runWithLoading = useCallback(async (action: () => void) => {
-    setIsLayoutLoading(true);
-    try {
-      await delay(LOAD_DELAY_MS);
-      action();
-    } finally {
-      setIsLayoutLoading(false);
-    }
-  }, []);
+  const runWithLoading = useCallback(
+    async (action: () => void | Promise<void>) => {
+      setLoadingCount((count) => count + 1);
+      try {
+        await delay(LOAD_DELAY_MS);
+        await action();
+      } finally {
+        setLoadingCount((count) => Math.max(0, count - 1));
+      }
+    },
+    []
+  );
 
   const selectProject = useCallback(
     (project: MockProject) => {
@@ -104,7 +110,7 @@ export function useProjectDialogs() {
   }, [createName, runWithLoading]);
 
   const handleRenameSubmit = useCallback(() => {
-    if (!targetProject) return;
+    if (!targetProject || !targetProject.owned) return;
     const name = renameName.trim();
     if (!name) return;
 
@@ -122,7 +128,7 @@ export function useProjectDialogs() {
   }, [renameName, targetProject, runWithLoading]);
 
   const handleDeleteConfirm = useCallback(() => {
-    if (!targetProject) return;
+    if (!targetProject || !targetProject.owned) return;
 
     void runWithLoading(() => {
       setOwnedProjects((previous) =>

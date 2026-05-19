@@ -72,11 +72,15 @@ Child routes under `/_authenticated/` inherit the guard automatically.
 
 ## Redirect After Sign-In
 
+Use `location` from `beforeLoad` — not `window` (SSR-safe):
+
 ```typescript
-throw redirect({
-  to: '/sign-in',
-  search: { redirect: window.location.pathname },
-})
+beforeLoad: ({ location }) => {
+  throw redirect({
+    to: '/sign-in',
+    search: { redirect: location.pathname },
+  })
+}
 ```
 
 [Docs](https://clerk.com/docs/tanstack-react-start/getting-started/quickstart)

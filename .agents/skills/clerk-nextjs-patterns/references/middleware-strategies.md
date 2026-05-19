@@ -78,11 +78,10 @@ For routes that accept different token types (OAuth tokens, machine-to-machine t
 
 ```typescript
 const isMachineApi = createRouteMatcher(['/api/machine(.*)']);
-const isPublicApi = createRouteMatcher(['/api/public(.*)']);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isMachineApi(req)) await auth.protect({ token: 'm2m_token' });
-  if (isPublicApi(req)) await auth.protect({ token: 'any' });
+  // Truly public routes should skip auth.protect() entirely.
 });
 ```
 

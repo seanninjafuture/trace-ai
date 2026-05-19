@@ -7,7 +7,7 @@ export function getRouter() {
     defaultPreload: 'intent',
     defaultErrorComponent: ({ error }) => (
       <p>
-        {process.env.NODE_ENV === 'development'
+        {import.meta.env.DEV
           ? error.stack
           : 'Something went wrong. Please try again.'}
       </p>

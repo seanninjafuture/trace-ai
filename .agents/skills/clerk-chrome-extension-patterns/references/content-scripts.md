@@ -82,15 +82,17 @@ async function fetchUserData() {
 
 ## Manifest Permissions
 
-`package.json` (Plasmo):
+`package.json` (Plasmo) — prefer the narrowest host permissions your extension needs:
 ```json
 {
   "manifest": {
     "permissions": ["storage", "tabs"],
-    "host_permissions": ["<all_urls>"]
+    "host_permissions": ["https://your-app.example.com/*"]
   }
 }
 ```
+
+Use `<all_urls>` only when you must inject on arbitrary sites, and document why in your security review.
 
 For content scripts on specific domains only:
 ```json

@@ -83,7 +83,7 @@ For popups or side panels that use plain TypeScript instead of React:
 ```typescript
 import { createClerkClient } from '@clerk/chrome-extension/client'
 
-const publishableKey = process.env.CLERK_PUBLISHABLE_KEY
+const publishableKey = process.env.PLASMO_PUBLIC_CLERK_PUBLISHABLE_KEY
 const EXTENSION_URL = chrome.runtime.getURL('.')
 const POPUP_URL = `${EXTENSION_URL}popup.html`
 

@@ -1,6 +1,8 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { Liveblocks } from "@liveblocks/node";
 
+import { canUserAccessRoom } from "@/lib/liveblocks-room-access";
+
 type LiveblocksAuthBody = {
   room?: string;
 };
@@ -30,6 +32,10 @@ export async function POST(req: Request) {
 
   if (!room) {
     return new Response("Missing room", { status: 400 });
+  }
+
+  if (!canUserAccessRoom(userId, room)) {
+    return new Response("Forbidden", { status: 403 });
   }
 
   const liveblocks = new Liveblocks({

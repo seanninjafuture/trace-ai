@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import type { MockProject } from "@/types/project";
+import type { WorkspaceProject } from "@/types/project";
 
 type ProjectSidebarProps = {
   onClose: () => void;
@@ -27,7 +27,7 @@ function ProjectRow({
   onRename,
   onDelete,
 }: {
-  project: MockProject;
+  project: WorkspaceProject;
   isActive: boolean;
   showActions: boolean;
   onSelect: () => void;

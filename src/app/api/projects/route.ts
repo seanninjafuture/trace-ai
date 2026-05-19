@@ -35,13 +35,16 @@ export async function POST(req: Request) {
     body = {};
   }
 
+  const canvasJsonPath =
+    typeof body.canvasJsonPath === "string" ? body.canvasJsonPath.trim() : "";
+
   const project = await prisma.project.create({
     data: {
       ownerId: authResult.userId,
       name: resolveProjectName(body.name),
       description: parseOptionalDescription(body.description),
       status: "DRAFT",
-      canvasJsonPath: "",
+      canvasJsonPath,
     },
   });
 

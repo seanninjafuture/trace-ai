@@ -3,14 +3,28 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 import {
-  useProjectDialogs,
-  type ProjectDialogsState,
-} from "@/hooks/use-project-dialogs";
+  useProjectActions,
+  type ProjectActionsState,
+} from "@/hooks/use-project-actions";
+import type { WorkspaceProject } from "@/types/project";
 
-const EditorWorkspaceContext = createContext<ProjectDialogsState | null>(null);
+const EditorWorkspaceContext = createContext<ProjectActionsState | null>(null);
 
-export function EditorWorkspaceProvider({ children }: { children: ReactNode }) {
-  const workspace = useProjectDialogs();
+type EditorWorkspaceProviderProps = {
+  children: ReactNode;
+  initialOwnedProjects: WorkspaceProject[];
+  initialSharedProjects: WorkspaceProject[];
+};
+
+export function EditorWorkspaceProvider({
+  children,
+  initialOwnedProjects,
+  initialSharedProjects,
+}: EditorWorkspaceProviderProps) {
+  const workspace = useProjectActions({
+    ownedProjects: initialOwnedProjects,
+    sharedProjects: initialSharedProjects,
+  });
 
   return (
     <EditorWorkspaceContext.Provider value={workspace}>
@@ -19,7 +33,7 @@ export function EditorWorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useEditorWorkspace(): ProjectDialogsState {
+export function useEditorWorkspace(): ProjectActionsState {
   const context = useContext(EditorWorkspaceContext);
   if (!context) {
     throw new Error(

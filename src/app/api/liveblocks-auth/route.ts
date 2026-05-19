@@ -1,7 +1,11 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { Liveblocks } from "@liveblocks/node";
 
-export async function POST() {
+type LiveblocksAuthBody = {
+  room?: string;
+};
+
+export async function POST(req: Request) {
   const { userId, isAuthenticated } = await auth();
 
   if (!isAuthenticated || !userId) {
@@ -13,6 +17,19 @@ export async function POST() {
   if (!liveblocksSecret) {
     console.error("Missing LIVEBLOCKS_SECRET_KEY");
     return new Response("Server configuration error", { status: 500 });
+  }
+
+  let room: string;
+
+  try {
+    const body = (await req.json()) as LiveblocksAuthBody;
+    room = typeof body.room === "string" ? body.room.trim() : "";
+  } catch {
+    return new Response("Invalid JSON body", { status: 400 });
+  }
+
+  if (!room) {
+    return new Response("Missing room", { status: 400 });
   }
 
   const liveblocks = new Liveblocks({
@@ -35,6 +52,8 @@ export async function POST() {
       avatar: avatar ?? "",
     },
   });
+
+  session.allow(room, session.FULL_ACCESS);
 
   const { status, body } = await session.authorize();
   return new Response(body, { status });

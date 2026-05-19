@@ -95,11 +95,10 @@
     {
       "id": 8,
       "prompt": "my nuxt app has a server API route /api/user-data that should only work for authenticated users. implement the server-side auth check.",
-      "expected_output": "Uses getAuth from @clerk/nuxt/server in the event handler, throws 401 when userId is falsy",
+      "expected_output": "Uses event.context.auth in the Nitro handler, throws 401 when userId is falsy",
       "scaffold": "nuxt-basic-auth",
       "expectations": [
-        "Imports getAuth from @clerk/nuxt/server",
-        "Calls getAuth(event) to get userId",
+        "Reads userId from event.context.auth",
         "Throws createError({ statusCode: 401 }) when userId is falsy",
         "Uses userId in the data fetching logic",
         "Does NOT use client-side composables in the server route"

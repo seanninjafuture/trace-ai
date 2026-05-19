@@ -2,11 +2,11 @@
   "name": "clerk-expo",
   "scripts": { "start": "expo start" },
   "dependencies": {
-    "@clerk/expo": "latest",
-    "expo": "latest",
-    "expo-router": "latest",
-    "expo-secure-store": "latest",
-    "react": "latest",
-    "react-native": "latest"
+    "@clerk/expo": "3.2.14",
+    "expo": "55.0.24",
+    "expo-router": "55.0.14",
+    "expo-secure-store": "55.0.14",
+    "react": "19.2.6",
+    "react-native": "0.85.3"
   }
 }

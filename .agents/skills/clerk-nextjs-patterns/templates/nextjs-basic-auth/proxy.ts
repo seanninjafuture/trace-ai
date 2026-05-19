@@ -1,3 +1,4 @@
+// Next.js 16+: use proxy.ts at the project root or src/proxy.ts (not middleware.ts).
 import { clerkMiddleware } from '@clerk/nextjs/server'
 
 export default clerkMiddleware()

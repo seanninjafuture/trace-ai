@@ -7,6 +7,7 @@ For plain Vue (without Nuxt), protect routes using navigation guards.
 ```ts
 // router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuth } from '@clerk/vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -17,10 +18,13 @@ const router = createRouter({
   ],
 })
 
+// Call composables once after Clerk plugin is installed (not inside each navigation).
+const { userId, isLoaded } = useAuth()
+
 router.beforeEach(async (to) => {
   if (!to.meta.requiresAuth) return true
 
-  const { userId } = useAuth()
+  if (!isLoaded.value) return true
 
   if (!userId.value) return '/sign-in'
   return true
@@ -49,11 +53,15 @@ watchEffect(() => {
 ## Org-Gated Route
 
 ```ts
+import { useAuth, useOrganization } from '@clerk/vue'
+
+const { userId, isLoaded } = useAuth()
+const { organization } = useOrganization()
+
 router.beforeEach(async (to) => {
   if (!to.meta.requiresOrg) return true
 
-  const { userId } = useAuth()
-  const { organization } = useOrganization()
+  if (!isLoaded.value) return true
 
   if (!userId.value) return '/sign-in'
   if (!organization.value) return '/select-org'
@@ -63,6 +71,6 @@ router.beforeEach(async (to) => {
 
 ## CRITICAL
 
-- Call composables outside of the guard function body if possible — `useAuth()` is reactive and works outside components in Vue 3 (when called in setup context or at module level after plugin install)
-- `isLoaded` must be true before trusting `isSignedIn` — guard may fire before Clerk initializes
+- Call composables once at module scope after `app.use(clerkPlugin)` — not inside `beforeEach` on every navigation
+- `isLoaded` must be true before trusting `isSignedIn` or `userId` — the guard may fire before Clerk initializes
 - For Nuxt, prefer `middleware/` instead of manual router guards

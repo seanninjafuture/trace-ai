@@ -34,6 +34,7 @@ type DialogShellProps = DialogPrimitive.Root.Props & {
   footer?: React.ReactNode;
   showCloseButton?: boolean;
   contentClassName?: string;
+  overlayClassName?: string;
 };
 
 function DialogShellOverlay({
@@ -56,12 +57,13 @@ function DialogShellContent({
   children,
   footer,
   showCloseButton = true,
+  overlayClassName,
   ...props
 }: Omit<DialogShellProps, keyof DialogPrimitive.Root.Props> &
   DialogPrimitive.Popup.Props) {
   return (
     <DialogPortal>
-      <DialogShellOverlay />
+      <DialogShellOverlay className={overlayClassName} />
       <DialogPrimitive.Popup
         data-slot="dialog-shell-content"
         className={cn(dialogContentClassName, className)}
@@ -113,6 +115,7 @@ export function DialogShell({
   footer,
   showCloseButton,
   contentClassName,
+  overlayClassName,
   ...rootProps
 }: DialogShellProps) {
   return (
@@ -123,6 +126,7 @@ export function DialogShell({
         footer={footer}
         showCloseButton={showCloseButton}
         className={contentClassName}
+        overlayClassName={overlayClassName}
       >
         {children}
       </DialogShellContent>

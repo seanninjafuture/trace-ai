@@ -1,5 +1,7 @@
+"use client";
+
 import { UserButton } from "@clerk/nextjs";
-import { Download } from "lucide-react";
+import { Download, LayoutGrid } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,7 +12,17 @@ const COLLABORATORS = [
   { initials: "MR", active: false },
 ] as const;
 
-export function EditorNavbar({ projectName = "Untitled Architecture" }) {
+type EditorNavbarProps = {
+  projectName?: string;
+  onOpenProjects: () => void;
+};
+
+export function EditorNavbar({
+  projectName,
+  onOpenProjects,
+}: EditorNavbarProps) {
+  const displayName = projectName ?? "No project selected";
+
   return (
     <header
       className={cn(
@@ -18,6 +30,16 @@ export function EditorNavbar({ projectName = "Untitled Architecture" }) {
       )}
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onOpenProjects}
+          aria-label="Open projects"
+          className="shrink-0"
+        >
+          <LayoutGrid className="size-4" />
+        </Button>
         <div
           className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-bg-surface ring-1 ring-border-default"
           aria-hidden
@@ -27,7 +49,7 @@ export function EditorNavbar({ projectName = "Untitled Architecture" }) {
           </span>
         </div>
         <span className="truncate text-sm font-medium text-text-primary">
-          {projectName}
+          {displayName}
         </span>
       </div>
 

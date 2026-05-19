@@ -1,8 +1,9 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
-import { Download, LayoutGrid } from "lucide-react";
+import { Flame, LayoutGrid } from "lucide-react";
 
+import { ShareDialog } from "@/components/editor/share-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,14 +15,25 @@ const COLLABORATORS = [
 
 type EditorNavbarProps = {
   projectName?: string;
+  projectSlug?: string;
+  projectId?: string;
+  isProjectOwner?: boolean;
   onOpenProjects: () => void;
+  simulationSidebarOpen: boolean;
+  onToggleSimulationSidebar: () => void;
 };
 
 export function EditorNavbar({
   projectName,
+  projectSlug,
+  projectId,
+  isProjectOwner = false,
   onOpenProjects,
+  simulationSidebarOpen,
+  onToggleSimulationSidebar,
 }: EditorNavbarProps) {
   const displayName = projectName ?? "No project selected";
+  const showSlug = Boolean(projectSlug && projectSlug.length > 0);
 
   return (
     <header
@@ -48,9 +60,16 @@ export function EditorNavbar({
             T
           </span>
         </div>
-        <span className="truncate text-sm font-medium text-text-primary">
-          {displayName}
-        </span>
+        <div className="min-w-0">
+          <span className="block truncate text-sm font-medium text-text-primary">
+            {displayName}
+          </span>
+          {showSlug ? (
+            <span className="block truncate font-mono text-xs text-text-muted">
+              {projectSlug}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex items-center justify-center gap-2 px-6">
@@ -70,12 +89,26 @@ export function EditorNavbar({
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-3">
-        <Button type="button" disabled className="gap-2">
-          <Download className="size-5" />
-          Export Playbook
+        {projectId ? (
+          <ShareDialog projectId={projectId} isProjectOwner={isProjectOwner} />
+        ) : null}
+        <Button
+          type="button"
+          variant={simulationSidebarOpen ? "default" : "outline"}
+          size="icon"
+          onClick={onToggleSimulationSidebar}
+          aria-label={
+            simulationSidebarOpen
+              ? "Hide chaos simulation sidebar"
+              : "Show chaos simulation sidebar"
+          }
+          aria-pressed={simulationSidebarOpen}
+        >
+          <Flame className="size-5" />
         </Button>
         <UserButton />
       </div>
     </header>
   );
 }
+

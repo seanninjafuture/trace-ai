@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { useEditorWorkspace } from "@/components/editor/editor-workspace-provider";
@@ -9,12 +9,17 @@ import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { SimulationSidebar } from "@/components/editor/simulation-sidebar";
 import { cn } from "@/lib/utils";
+import type { WorkspaceProject } from "@/types/project";
 
 type EditorLayoutProps = {
   children?: ReactNode;
+  workspaceProject?: WorkspaceProject;
 };
 
-export function EditorLayout({ children }: EditorLayoutProps) {
+export function EditorLayout({
+  children,
+  workspaceProject,
+}: EditorLayoutProps) {
   const {
     activeProject,
     isProjectSidebarOpen,
@@ -22,11 +27,22 @@ export function EditorLayout({ children }: EditorLayoutProps) {
     isLayoutLoading,
   } = useEditorWorkspace();
 
+  const [simulationSidebarOpen, setSimulationSidebarOpen] = useState(true);
+
+  const resolvedProject = activeProject ?? workspaceProject ?? null;
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg-base">
       <EditorNavbar
-        projectName={activeProject?.name}
+        projectName={resolvedProject?.name}
+        projectSlug={resolvedProject?.slug}
+        projectId={resolvedProject?.id}
+        isProjectOwner={resolvedProject?.owned ?? false}
         onOpenProjects={() => setProjectSidebarOpen(true)}
+        simulationSidebarOpen={simulationSidebarOpen}
+        onToggleSimulationSidebar={() =>
+          setSimulationSidebarOpen((open) => !open)
+        }
       />
 
       <div className="relative flex min-h-0 flex-1">
@@ -75,7 +91,7 @@ export function EditorLayout({ children }: EditorLayoutProps) {
           ) : null}
         </main>
 
-        <SimulationSidebar />
+        {simulationSidebarOpen ? <SimulationSidebar /> : null}
       </div>
 
       <ProjectDialogs />

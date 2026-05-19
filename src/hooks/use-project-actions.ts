@@ -24,7 +24,7 @@ export function useProjectActions({
   const params = useParams();
 
   const routeProjectId =
-    typeof params.projectId === "string" ? params.projectId : null;
+    typeof params.roomId === "string" ? params.roomId : null;
 
   const [activeDialog, setActiveDialog] = useState<ProjectDialogType>(null);
   const [createName, setCreateName] = useState("");

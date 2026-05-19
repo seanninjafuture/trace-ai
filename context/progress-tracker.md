@@ -4,7 +4,7 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Editor home wired to Prisma + project APIs; ready for Flow canvas
+- Share dialog and collaborator APIs complete; ready for Flow canvas
 
 ## Current Goal
 
@@ -19,6 +19,8 @@ Update this file after every meaningful implementation change.
 - `feature-specs/05-prisma.md` — `Project` + `ProjectCollaborator` models with cascade deletes, unique compound constraint, and indexes; `User.projects` relation; `src/lib/prisma.ts` singleton (Accelerate when `prisma+postgres://`, else `@prisma/adapter-pg` + `pg`); migrations `init_users` + `add_projects` applied to Supabase; `npm run build` passes
 - `feature-specs/06-project-apis.md` — `GET`/`POST` `/api/projects`, `PATCH`/`DELETE` `/api/projects/[projectId]`; Clerk `auth()` 401 gate; owner-only mutation 403 gate; GET lists owned + collaborator projects by user id/email; POST defaults name to Untitled Project, status `DRAFT`; helpers in `src/lib/projects-api.ts`
 - `feature-specs/07-wire-editor-home.md` — async `editor/layout.tsx` + `listEditorProjectsForCurrentUser` (owned vs shared); `use-project-actions.ts` (create/rename/delete via REST, `router.push` / `router.refresh`); `POST` accepts `canvasJsonPath` aligned with `generateProjectRoomId`; `/editor/[projectId]` route; Liveblocks room preview in create dialog; delete warning includes project name; removed `mock-projects.ts`
+- `feature-specs/08-editor-workspace-shell.md` — `evaluateProjectAccess` in `src/lib/project-access.ts` (owner + collaborator by email, lookup by `Project.id` or `canvasJsonPath`); RSC `/editor/[roomId]/page.tsx` with sign-in redirect and `AccessDenied`; `WorkspaceCanvas` placeholder; `EditorLayout` receives server `workspaceProject` for navbar title/slug; mock Share + Flame sidebar toggle; provider-only `editor/layout.tsx`; `npm run build` passes
+- `feature-specs/09-share-dialog.md` — `GET`/`POST` `/api/projects/[projectId]/collaborators`, `DELETE` `.../collaborators/[collaboratorId]`; owner-only mutations; member GET for owner + collaborators; Clerk `getUserList` / `getUser` enrichment in `src/lib/clerk-user-enrichment.ts`; `ShareDialog` (`UserPlus` trigger, ScrollArea member list, owner invite/remove + copy link with 2s “Copied!”); collaborators read-only; `npm run build` passes
 
 ## In Progress
 
@@ -37,9 +39,11 @@ Update this file after every meaningful implementation change.
 - Editor shell uses `h-screen` flex column: fixed `h-14` navbar, `flex-1 min-h-0` row for sidebars + canvas so panels fill remaining viewport height and align to the navbar bottom edge
 - Dialog overlay/content styling lives in `src/components/editor/dialog-shell.tsx` so `src/components/ui/dialog.tsx` stays untouched per design-system rules; project modals pass `overlayClassName` for `bg-black/80 backdrop-blur-sm`
 - Editor project lists are server-fetched in `editor/layout.tsx` via `listEditorProjectsForCurrentUser` (React `cache`); client mutations use `use-project-actions.ts` + `router.refresh()` / `router.push()`
-- Active workspace is selected by URL `/editor/[projectId]`; home splash at `/editor` when no project segment
+- Active workspace is selected by URL `/editor/[roomId]` (project id or `canvasJsonPath`); home splash at `/editor` when no project segment; unauthorized or missing projects render full-page `AccessDenied` outside the editor shell
+- Server-side room access is enforced in `src/lib/project-access.ts` before `EditorLayout` mounts on `/editor/[roomId]`
+- Collaborator invites store email only in `ProjectCollaborator`; display names and avatars resolve at read time via Clerk Backend API (no extra local profile sync table)
+- Project CRUD lives in `src/app/api/projects/` (route handlers), shared guards in `src/lib/projects-api.ts`; collaborator routes in `src/lib/collaborators-api.ts`
 - `canvasJsonPath` and Liveblocks room id share the same slugified name + 4-char suffix from `generateProjectRoomId`
-- Project CRUD lives in `src/app/api/projects/` (route handlers), shared guards in `src/lib/projects-api.ts`
 - Persistent database: Supabase PostgreSQL only, accessed via Prisma (`DATABASE_URL` + `DIRECT_URL` session/transaction poolers on IPv4)
 - Prisma client lives at `src/lib/prisma.ts`; Clerk user sync in `src/server/actions/sync-clerk-user.ts`
 - App routes live under `src/app/`; Clerk proxy in `src/proxy.ts` (not `middleware.ts`)

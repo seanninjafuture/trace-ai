@@ -10,7 +10,7 @@ Update this file after every meaningful implementation change.
 
 
 
-- Base collaborative React Flow canvas complete; ready for node palette and simulation
+- Node color toolbar and cluster palette on the collaborative canvas complete; ready for service panel forms and simulation
 
 
 
@@ -18,7 +18,7 @@ Update this file after every meaningful implementation change.
 
 
 
-- Node palette drag-and-drop and service panel forms (deferred from base canvas scope)
+- Service panel option forms and AI chaos prompt routing
 
 
 
@@ -48,6 +48,14 @@ Update this file after every meaningful implementation change.
 
 - `feature-specs/11-base-canvas.md` — `src/types/canvas.ts` trace node/edge types; `CanvasProvider` (`LiveblocksProvider` → `/api/liveblocks-auth`, `RoomProvider` with presence + empty `initialStorage`, `ClientSideSuspense`, connection error + retry); `TraceCanvas` with `useLiveblocksFlow` (suspense, Liveblocks `flow` storage), dot `Background`, `MiniMap`, `ConnectionMode.Loose`, `fitView`, `traceNode` custom nodes + seed dummy topology; removed `WorkspaceCanvas` placeholder; `npm run build` passes
 
+- `feature-specs/12-shape-panel.md` — `src/lib/canvas/infrastructure-nodes.ts` (definitions, JSON drag payload parse/serialize, node factory); `NodeSidebar` HTML5 drag with styled ghost + `application/trace-infrastructure-node` payload; `TraceCanvas` `onDragOver`/`onDrop` + `screenToFlowPosition` + Liveblocks `onNodesChange` add; `FoundationalNodeRenderer` glass cards with top/bottom handles and type icons; `npm run build` passes
+
+- `feature-specs/13-nodes-shape.md` — `src/components/canvas/nodes/trace-node.tsx` type-specific profiles (gateway pill + double ring, compute grid card, database scaling cylinder SVG, queue hexagon SVG); glass rest + accent focus when selected or peer `activeNodeId`; `infrastructure-shapes.tsx` shared body/SVGs; `drag-ghost.ts` + `NodeSidebar` `setDragImage` previews sized to definition dimensions with `onDragEnd` teardown; reads `TraceNodeData` from Liveblocks nodes unchanged; `npx next build` passes
+
+- `feature-specs/14-node-editing.md` — `NodeResizer` on selected nodes (hidden when peer `activeNodeId` locks node) with 140×50 min bounds and zinc handle styling; resize dimensions sync via React Flow → Liveblocks `dimensions` changes; double-click inline `TraceNodeLabelEditor` (`Textarea`, `nodrag`/`nopan`, Escape/blur teardown) with live `data.label` mutation through `useUpdateTraceNodeLabel`; empty-label placeholder in `InfrastructureShapeBody`; `npx next build` passes
+
+- `feature-specs/15-nodes-color-toolbar.md` — `NodeColorPair` + `NODE_COLOR_PAIR_DEFINITIONS` in `src/lib/canvas/node-color-pairs.ts`; `data.colorPair` on `TraceNodeData`; `TraceNodeColorToolbar` (`NodeToolbar`, 12px offset, glass swatch row, active ring + hover glow, `nodrag`/`nopan`); `useUpdateTraceNodeColorPair` Liveblocks mutation; node shell/label/icon classes from palette in `trace-node.tsx` + `infrastructure-shapes.tsx`; toolbar hidden during label edit; new nodes default `colorPair: "default"`; `npm run build` passes
+
 
 
 ## In Progress
@@ -61,8 +69,6 @@ Update this file after every meaningful implementation change.
 ## Next Up
 
 
-
-- Node palette (drag-and-drop infrastructure nodes onto canvas)
 
 - Service panel option forms and AI chaos prompt routing
 
@@ -100,6 +106,14 @@ Update this file after every meaningful implementation change.
 
 - Collaborative canvas lives in `src/components/canvas/`; `CanvasProvider` wraps workspace main on `/editor/[roomId]` with Liveblocks room id = `workspaceProject.slug` (`canvasJsonPath`); React Flow state syncs via `@liveblocks/react-flow` `useLiveblocksFlow` into optional `Storage.flow` LiveMap (created on first connect)
 
+- Infrastructure palette drag uses JSON payload MIME `application/trace-infrastructure-node`; drops call `onNodesChange([{ type: "add", item }])` so nodes sync through Liveblocks storage to all peers
+
+- Canvas node visuals live in `src/components/canvas/nodes/` (`trace-node.tsx`, `infrastructure-shapes.tsx`, `drag-ghost.ts`, `trace-node-label-editor.tsx`, `use-trace-node-mutations.ts`); drag previews mirror per-type default dimensions from `INFRASTRUCTURE_NODE_DEFINITIONS`
+
+- Node resize uses `@xyflow/react` `NodeResizer` (min 140×50); label edits mutate `flow.nodes[id].data.label` via Liveblocks `useMutation` for realtime multi-user sync
+
+- Node cluster colors use predefined `NodeColorPair` tokens (`default`, `blue`, `purple`, `amber`); `TraceNodeColorToolbar` updates `flow.nodes[id].data.colorPair` via Liveblocks; missing/invalid values resolve to `default`
+
 - Persistent database: Supabase PostgreSQL only, accessed via Prisma (`DATABASE_URL` + `DIRECT_URL` session/transaction poolers on IPv4)
 
 - Prisma client lives at `src/lib/prisma.ts`; Clerk user sync in `src/server/actions/sync-clerk-user.ts`
@@ -111,6 +125,18 @@ Update this file after every meaningful implementation change.
 
 
 ## Session Notes
+
+- **Never wrap `<TraceCanvas />` (or anything that mounts `<ReactFlow>`) in `<Suspense>` / `<ClientSideSuspense>`.** React 19's Suspense reappear pass re-fires layout effects with mount semantics on every fiber inside the suspended subtree. `@xyflow/react`'s `<StoreUpdater>` writes to its Zustand store inside a mount layout effect, and the resulting zustand → forceStoreRerender → re-commit → mount-effect-again cycle exhausts React's `Maximum update depth` counter (see `context/current-issues.md`). Use `useLiveblocksFlow({ suspense: false })` and gate the `<ReactFlow>` mount on `result.isLoading` instead.
+
+- `CanvasProvider` imports `LiveblocksProvider` / `RoomProvider` from `@liveblocks/react` (not `/suspense`) and renders `<TraceCanvas />` directly without any suspense wrapper.
+
+- `TraceCanvasInner` keeps the last non-null `nodes` / `edges` arrays in refs (`lastNodesRef`, `lastEdgesRef`) so the very first `<ReactFlow>` mount sees stable, non-null arrays.
+
+- All custom node and edge types passed to `<ReactFlow>` must be defined as module-scope constants (`traceNodeTypes`, `traceEdgeTypes`) — never inline literals. Per xyflow's `error002`, inline `nodeTypes`/`edgeTypes` objects force internal recomputation and trigger update loops. Same applies to `proOptions`.
+
+- Do not call `useReactFlow()` inside `TraceCanvasInner` — it subscribes to the xyflow zustand store (`useStore((s) => !!s.panZoom)`) and re-renders the canvas on store updates, which can chain into a StoreUpdater feedback loop. Use `useStoreApi()` + `pointToFlowPosition` from `src/lib/canvas/screen-to-flow.ts` for screen→flow math.
+
+- `<Cursors />` from `@liveblocks/react-flow` is temporarily removed from the canvas. Re-add only after verifying it does not reintroduce the StoreUpdater loop in the new non-suspense setup.
 
 
 

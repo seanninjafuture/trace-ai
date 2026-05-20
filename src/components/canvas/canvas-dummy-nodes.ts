@@ -1,3 +1,4 @@
+import { INFRASTRUCTURE_NODE_DEFINITIONS } from "@/lib/canvas/infrastructure-nodes";
 import type { TraceCanvasEdge, TraceCanvasNode } from "@/types/canvas";
 
 /** Seed nodes for validating drag/sync on new rooms (palette injection comes later). */
@@ -6,6 +7,8 @@ export const CANVAS_DUMMY_NODES: TraceCanvasNode[] = [
     id: "gateway-1",
     type: "traceNode",
     position: { x: 80, y: 120 },
+    width: INFRASTRUCTURE_NODE_DEFINITIONS.gateway.dimensions.width,
+    height: INFRASTRUCTURE_NODE_DEFINITIONS.gateway.dimensions.height,
     data: {
       label: "API Gateway",
       type: "gateway",
@@ -18,6 +21,8 @@ export const CANVAS_DUMMY_NODES: TraceCanvasNode[] = [
     id: "compute-1",
     type: "traceNode",
     position: { x: 320, y: 80 },
+    width: INFRASTRUCTURE_NODE_DEFINITIONS.compute.dimensions.width,
+    height: INFRASTRUCTURE_NODE_DEFINITIONS.compute.dimensions.height,
     data: {
       label: "Worker Pool",
       type: "compute",
@@ -30,6 +35,8 @@ export const CANVAS_DUMMY_NODES: TraceCanvasNode[] = [
     id: "database-1",
     type: "traceNode",
     position: { x: 560, y: 200 },
+    width: INFRASTRUCTURE_NODE_DEFINITIONS.database.dimensions.width,
+    height: INFRASTRUCTURE_NODE_DEFINITIONS.database.dimensions.height,
     data: {
       label: "Primary DB",
       type: "database",

@@ -54,6 +54,12 @@
       "sourceType": "github",
       "skillPath": "skills/frameworks/clerk-vue-patterns/SKILL.md",
       "computedHash": "39422e2655a33860fd37bd2ece88417e2662cd172b896ebd1f12dcc9c367aeee"
+    },
+    "liveblocks-best-practices": {
+      "source": "liveblocks/skills",
+      "sourceType": "github",
+      "skillPath": "skills/liveblocks-best-practices/SKILL.md",
+      "computedHash": "df4f54f66e81c580d25c5fee989768368837df694ab63c0f4a0fd70500cd16af"
     }
   }
 }

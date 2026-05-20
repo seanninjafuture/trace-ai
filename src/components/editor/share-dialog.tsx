@@ -54,6 +54,7 @@ export function ShareDialog({ projectId, isProjectOwner }: ShareDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const loadCollaborators = useCallback(async () => {
@@ -98,6 +99,7 @@ export function ShareDialog({ projectId, isProjectOwner }: ShareDialogProps) {
     void (async () => {
       setIsSubmitting(true);
       setError(null);
+      setSuccessMessage(null);
 
       try {
         const response = await fetch(
@@ -118,6 +120,7 @@ export function ShareDialog({ projectId, isProjectOwner }: ShareDialogProps) {
         }
 
         setInviteEmail("");
+        setSuccessMessage(`Invite email sent to ${email}.`);
         await loadCollaborators();
         router.refresh();
       } catch {
@@ -282,11 +285,17 @@ export function ShareDialog({ projectId, isProjectOwner }: ShareDialogProps) {
           </ul>
         </ScrollArea>
 
-        {error ? (
-          <p className="mt-3 text-xs text-state-error" role="alert">
-            {error}
-          </p>
-        ) : null}
+      {error ? (
+        <p className="mt-3 text-xs text-state-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {successMessage ? (
+        <p className="mt-3 text-xs text-state-success" role="status">
+          {successMessage}
+        </p>
+      ) : null}
       </DialogShell>
     </>
   );

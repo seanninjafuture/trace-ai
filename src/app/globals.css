@@ -69,6 +69,14 @@
   --state-error: #ef4444;
   --state-success: #22c55e;
   --state-warning: #f59e0b;
+  --user-color-1: #3b82f6;
+  --user-color-2: #22c55e;
+  --user-color-3: #f59e0b;
+  --user-color-4: #ef4444;
+  --user-color-5: #a855f7;
+  --user-color-6: #06b6d4;
+  --user-color-7: #ec4899;
+  --user-color-8: #eab308;
   --auth-panel: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-surface));
   --auth-panel-glow: color-mix(in srgb, var(--accent-primary) 22%, transparent);
 

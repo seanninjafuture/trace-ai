@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AccessDenied } from "@/components/editor/access-denied";
 import { EditorLayout } from "@/components/editor/editor-layout";
-import { WorkspaceCanvas } from "@/components/editor/workspace-canvas";
+import { CanvasProvider } from "@/components/canvas/canvas-provider";
 import { evaluateProjectAccess } from "@/lib/project-access";
 import { slugifyProjectName } from "@/lib/slugify";
 import type { WorkspaceProject } from "@/types/project";
@@ -35,7 +35,7 @@ export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
 
   return (
     <EditorLayout workspaceProject={workspaceProject}>
-      <WorkspaceCanvas />
+      <CanvasProvider roomId={workspaceProject.slug} />
     </EditorLayout>
   );
 }

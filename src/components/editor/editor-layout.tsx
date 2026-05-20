@@ -45,7 +45,7 @@ export function EditorLayout({
         }
       />
 
-      <div className="relative flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {isProjectSidebarOpen ? (
           <>
             <button
@@ -69,20 +69,14 @@ export function EditorLayout({
           </>
         ) : null}
 
-        <NodeSidebar />
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-bg-base">
+          <NodeSidebar />
 
-        <main
-          className={cn(
-            "relative min-w-0 flex-1 bg-bg-base",
-            "bg-[radial-gradient(circle_at_center,var(--border-default)_1px,transparent_1px)]",
-            "bg-[length:24px_24px]"
-          )}
-        >
-          {children}
+          <div className="relative h-full min-h-0 pl-64">{children}</div>
 
           {isLayoutLoading ? (
             <div
-              className="absolute inset-0 z-20 flex items-center justify-center bg-bg-base/70 backdrop-blur-[2px]"
+              className="absolute inset-0 z-40 flex items-center justify-center bg-bg-base/70 backdrop-blur-[2px]"
               aria-busy
               aria-label="Loading workspace"
             >

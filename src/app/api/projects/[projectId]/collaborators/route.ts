@@ -1,3 +1,4 @@
+import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 import {
@@ -6,13 +7,28 @@ import {
   normalizeCollaboratorEmail,
   requireProjectMember,
 } from "@/lib/collaborators-api";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
 import {
   getVerifiedUserEmail,
   requireAuthenticatedUserInDatabase,
   requireProjectOwner,
 } from "@/lib/projects-api";
+import { sendCollaboratorInviteEmail } from "@/services/email/send-collaborator-invite";
 import type { ProjectCollaboratorsResponse } from "@/types/collaborator";
+
+function resolveInviterName(
+  user: Awaited<ReturnType<typeof currentUser>>
+): string {
+  if (!user) return "A teammate";
+
+  return (
+    user.fullName ??
+    user.username ??
+    user.primaryEmailAddress?.emailAddress ??
+    "A teammate"
+  );
+}
 
 type RouteContext = {
   params: Promise<{ projectId: string }>;
@@ -124,6 +140,22 @@ export async function POST(req: Request, context: RouteContext) {
       collaboratorEmail,
     },
   });
+
+  const inviter = await currentUser();
+  const emailResult = await sendCollaboratorInviteEmail({
+    toEmail: collaboratorEmail,
+    projectName: project.name,
+    inviterName: resolveInviterName(inviter),
+    workspaceUrl: `${getAppBaseUrl(req)}/editor/${projectId}`,
+  });
+
+  if (!emailResult.ok) {
+    await prisma.projectCollaborator.delete({
+      where: { id: collaborator.id },
+    });
+
+    return NextResponse.json({ error: emailResult.message }, { status: 502 });
+  }
 
   return NextResponse.json(collaborator, { status: 201 });
 }

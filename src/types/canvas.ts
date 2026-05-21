@@ -21,4 +21,9 @@ export interface TraceNodeData extends Record<string, unknown> {
 }
 
 export type TraceCanvasNode = Node<TraceNodeData, "traceNode">;
-export type TraceCanvasEdge = Edge<Record<string, unknown>, "traceEdge">;
+
+export interface TraceEdgeData extends Record<string, unknown> {
+  label?: string;
+}
+
+export type TraceCanvasEdge = Edge<TraceEdgeData, "traceEdge">;

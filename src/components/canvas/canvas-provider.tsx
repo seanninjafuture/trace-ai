@@ -1,12 +1,17 @@
 "use client";
 
 import { LiveblocksProvider, RoomProvider } from "@liveblocks/react";
+import type { ReactNode } from "react";
 
 import { CanvasConnectionError } from "@/components/canvas/canvas-connection-error";
-import { TraceCanvas } from "@/components/canvas/trace-canvas";
+import { CanvasSaveProvider } from "@/components/canvas/canvas-save-context";
+import { StarterTemplateModalProvider } from "@/components/editor/starter-template-modal-context";
+import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
 
 type CanvasProviderProps = {
   roomId: string;
+  projectId?: string;
+  children: ReactNode;
 };
 
 // IMPORTANT: Do NOT wrap <TraceCanvas /> in <ClientSideSuspense> / <Suspense>.
@@ -17,24 +22,50 @@ type CanvasProviderProps = {
 // `Maximum update depth exceeded`. TraceCanvas handles its own loading state
 // via useLiveblocksFlow({ suspense: false }) and only mounts <ReactFlow> after
 // storage is ready.
-export function CanvasProvider({ roomId }: CanvasProviderProps) {
+export function CanvasProvider({
+  roomId,
+  projectId,
+  children,
+}: CanvasProviderProps) {
+  const roomContent = (
+    <StarterTemplateModalProvider>
+      {children}
+      <StarterTemplatesModal />
+    </StarterTemplateModalProvider>
+  );
+
+  return (
+    <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
+      <RoomProvider
+        id={roomId}
+        initialPresence={{
+          cursor: null,
+          activeNodeId: null,
+          isThinking: false,
+        }}
+        initialStorage={() => ({})}
+      >
+        {projectId ? (
+          <CanvasSaveProvider projectId={projectId}>
+            {roomContent}
+          </CanvasSaveProvider>
+        ) : (
+          roomContent
+        )}
+      </RoomProvider>
+    </LiveblocksProvider>
+  );
+}
+
+type CanvasSurfaceProps = {
+  children: ReactNode;
+};
+
+/** Connection error boundary + full-size canvas slot inside the room. */
+export function CanvasSurface({ children }: CanvasSurfaceProps) {
   return (
     <div className="h-full w-full">
-      <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
-        <RoomProvider
-          id={roomId}
-          initialPresence={{
-            cursor: null,
-            activeNodeId: null,
-            isThinking: false,
-          }}
-          initialStorage={() => ({})}
-        >
-          <CanvasConnectionError>
-            <TraceCanvas />
-          </CanvasConnectionError>
-        </RoomProvider>
-      </LiveblocksProvider>
+      <CanvasConnectionError>{children}</CanvasConnectionError>
     </div>
   );
 }

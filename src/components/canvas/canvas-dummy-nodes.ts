@@ -53,11 +53,13 @@ export const CANVAS_DUMMY_EDGES: TraceCanvasEdge[] = [
     type: "traceEdge",
     source: "gateway-1",
     target: "compute-1",
+    data: { label: "HTTPS" },
   },
   {
     id: "e-compute-database",
     type: "traceEdge",
     source: "compute-1",
     target: "database-1",
+    data: { label: "gRPC" },
   },
 ];

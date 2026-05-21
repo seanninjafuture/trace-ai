@@ -3,7 +3,9 @@
 import { UserButton } from "@clerk/nextjs";
 import { Flame, LayoutGrid } from "lucide-react";
 
+import { CanvasSaveStatus } from "@/components/editor/canvas-save-status";
 import { ShareDialog } from "@/components/editor/share-dialog";
+import { StarterTemplatesModalTrigger } from "@/components/editor/starter-templates-modal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -72,7 +74,8 @@ export function EditorNavbar({
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 px-6">
+      <div className="flex items-center justify-center gap-4 px-6">
+        {projectId ? <CanvasSaveStatus /> : null}
         {COLLABORATORS.map((user) => (
           <div
             key={user.initials}
@@ -89,6 +92,7 @@ export function EditorNavbar({
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-3">
+        {projectId ? <StarterTemplatesModalTrigger /> : null}
         {projectId ? (
           <ShareDialog projectId={projectId} isProjectOwner={isProjectOwner} />
         ) : null}

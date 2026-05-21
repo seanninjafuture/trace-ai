@@ -9,16 +9,19 @@ import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { SimulationSidebar } from "@/components/editor/simulation-sidebar";
 import { cn } from "@/lib/utils";
+import type { ProjectSpecSummary } from "@/types/project-spec";
 import type { WorkspaceProject } from "@/types/project";
 
 type EditorLayoutProps = {
   children?: ReactNode;
   workspaceProject?: WorkspaceProject;
+  projectSpecs?: ProjectSpecSummary[];
 };
 
 export function EditorLayout({
   children,
   workspaceProject,
+  projectSpecs = [],
 }: EditorLayoutProps) {
   const {
     activeProject,
@@ -85,7 +88,14 @@ export function EditorLayout({
           ) : null}
         </main>
 
-        {simulationSidebarOpen ? <SimulationSidebar /> : null}
+        {simulationSidebarOpen ? (
+          <SimulationSidebar
+            projectId={resolvedProject?.id}
+            roomId={resolvedProject?.slug}
+            projectSpecs={projectSpecs}
+            onClose={() => setSimulationSidebarOpen(false)}
+          />
+        ) : null}
       </div>
 
       <ProjectDialogs />

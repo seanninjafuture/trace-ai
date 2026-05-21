@@ -71,7 +71,7 @@ export function FoundationalNodeRenderer({
       <div
         style={{ width: dimensions.width, height: dimensions.height }}
         className={cn(
-          "relative shadow-sm backdrop-blur-md",
+          "group relative shadow-sm backdrop-blur-md",
           colorPair.shell,
           silhouetteClass[data.type],
           isFocused
@@ -91,10 +91,12 @@ export function FoundationalNodeRenderer({
       <Handle
         type="target"
         position={Position.Top}
-        className={cn(
-          "!-top-1.5 !size-2 !bg-bg-surface",
-          isFocused ? "!border-accent-primary" : "!border-border-default"
-        )}
+        className="!-top-1 !h-2 !w-2 !rounded-full !border !border-zinc-900 !bg-zinc-100 !opacity-0 transition-opacity duration-200 group-hover:!opacity-100"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!-left-1 !h-2 !w-2 !rounded-full !border !border-zinc-900 !bg-zinc-100 !opacity-0 transition-opacity duration-200 group-hover:!opacity-100"
       />
       <div
         className="relative size-full"
@@ -120,10 +122,12 @@ export function FoundationalNodeRenderer({
       <Handle
         type="source"
         position={Position.Bottom}
-        className={cn(
-          "!-bottom-1.5 !size-2 !bg-bg-surface",
-          isFocused ? "!border-accent-primary" : "!border-border-default"
-        )}
+        className="!-bottom-1 !h-2 !w-2 !rounded-full !border !border-zinc-900 !bg-zinc-100 !opacity-0 transition-opacity duration-200 group-hover:!opacity-100"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!-right-1 !h-2 !w-2 !rounded-full !border !border-zinc-900 !bg-zinc-100 !opacity-0 transition-opacity duration-200 group-hover:!opacity-100"
       />
       </div>
     </>

@@ -10,7 +10,7 @@ Update this file after every meaningful implementation change.
 
 
 
-- Node color toolbar and cluster palette on the collaborative canvas complete; ready for service panel forms and simulation
+- Service panel option forms and canvas node health/degraded visuals
 
 
 
@@ -18,13 +18,15 @@ Update this file after every meaningful implementation change.
 
 
 
-- Service panel option forms and AI chaos prompt routing
+- Next feature work after spec UI integration (see completed list)
 
 
 
 ## Completed
 
+- OpenRouter AI SDK — `@openrouter/ai-sdk-provider@2.9.0`; `src/lib/openrouter.ts` exports Nemotron 3 Nano Omni free model (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`); `.env.example` documents `OPENROUTER_API_KEY`
 
+- Trigger.dev v4 — `@trigger.dev/sdk@4.4.6`; root `trigger.config.ts` (`TRIGGER_PROJECT_REF`, `./trigger`); sample `hello-world` task in `trigger/example.ts`; `npm run trigger:dev`; `@trigger/*` path alias; `.env.example` documents `TRIGGER_SECRET_KEY` + `TRIGGER_PROJECT_REF` (user must create cloud project and login via `npx trigger.dev@latest login`)
 
 - `feature-specs/01-design-system.md` — shadcn/ui in `src/components/ui/`; `src/lib/utils.ts` (`cn()`); `tailwind.config.ts` + `@theme` utilities for design tokens; Button, Card, Dialog, Input, Textarea, Tabs, ScrollArea, Badge; `lucide-react`; dark-only tokens in `app/globals.css`; `html.dark` on root layout
 
@@ -56,6 +58,34 @@ Update this file after every meaningful implementation change.
 
 - `feature-specs/15-nodes-color-toolbar.md` — `NodeColorPair` + `NODE_COLOR_PAIR_DEFINITIONS` in `src/lib/canvas/node-color-pairs.ts`; `data.colorPair` on `TraceNodeData`; `TraceNodeColorToolbar` (`NodeToolbar`, 12px offset, glass swatch row, active ring + hover glow, `nodrag`/`nopan`); `useUpdateTraceNodeColorPair` Liveblocks mutation; node shell/label/icon classes from palette in `trace-node.tsx` + `infrastructure-shapes.tsx`; toolbar hidden during label edit; new nodes default `colorPair: "default"`; `npm run build` passes
 
+- `feature-specs/16-edge-behavior.md` — four cardinal handles on `trace-node.tsx` (top/left target, bottom/right source, zinc dots fade in on `group-hover`); `OrthogonalTrafficEdge` in `src/components/canvas/edges/orthogonal-edge.tsx` (`getSmoothStepPath` radius 8, accent hover/select + glow, transparent 12px hit path, `MarkerType.ArrowClosed`); `TraceEdgeData.label` + `TraceEdgeLabelEditor` / `useUpdateTraceEdgeLabel` via `EdgeLabelRenderer` midpoint (double-click, blur/Escape commit); `defaultEdgeOptions` on `TraceCanvas`; seed dummy edge labels; removed `trace-edge.tsx`; `npm run build` passes
+
+- `feature-specs/17-canvas-ergonomics.md` — `CanvasControls` pill (`Panel` bottom-left above `MiniMap`, glass zinc toolbar, zoom/fit + Liveblocks undo/redo with disabled states, `nodrag`/`nopan`); `useKeyboardShortcuts` in `src/hooks/use-keyboard-shortcuts.ts` (skips input/textarea/contenteditable; Cmd/Ctrl ±/=/Z/Shift+Z/Y); `CanvasKeyboardShortcuts` wired in `TraceCanvas`; viewport actions via `useReactFlow` in child components only (`duration: 200`, `fitView` padding 0.2); history via `useUndo`/`useRedo`/`useCanUndo`/`useCanRedo`; `npx next build` passes
+
+- `feature-specs/18-starter-template.md` — `STARTER_TEMPLATES` + `CanvasTemplate` in `src/components/editor/starter-templates.ts` (three-tier web, event-driven pipeline, HA cluster); `StarterTemplatePreview` static SVG (`viewBox` bounds, center-to-center edges, type-shaped nodes); `StarterTemplatesModal` + navbar `Templates` trigger (`DialogShell`, ScrollArea, responsive grid); `useImportStarterTemplate` flushes Liveblocks `flow` via `onDelete` then repopulates with `onNodesChange`/`onEdgesChange`; `CanvasProvider` hoisted around `EditorLayout` on `/editor/[roomId]` with `StarterTemplateModalProvider`; `npm run build` passes
+
+- `feature-specs/19-presence-avatars-cursor.md` — `Presence` types verified in `src/liveblocks.config.ts`; `PresenceBar` (`src/components/canvas/presence-bar.tsx`) absolute top-right on canvas (not navbar), Clerk `UserButton` + filtered `useOthers` (max 5 + `+N`, initials fallback, overlapping avatars); `CanvasPeerCursors` (`src/components/canvas/canvas-cursors.tsx`) flow-space pointer broadcast via `pointToFlowPosition` + `updateMyPresence`, remote SVG arrows + name badges colored from `userInfo.color`; wired in `TraceCanvas`; `npm run build` passes
+
+- `feature-specs/20-ai-sidebar-shell.md` — `SimulationSidebar` glass shell (`w-80`, `h-[calc(100vh-3.5rem)]`, `bg-bg-surface`, `shadow-2xl`); modular `src/components/editor/ai-sidebar/` (`ai-sidebar-header`, `ai-sidebar-tabs`, `ai-architect-tab`, `ai-specs-tab`, `types`); AI Architect tab with mock chat (empty-state Bot + shortcut chips, user/assistant bubbles, Enter submit / Shift+Enter newline, Inject Chaos); Specs tab with Generate Incident Spec File + mock `post_mortem_simulation_latest.md` preview + disabled download; `PanelRightClose` via optional `onClose` from `EditorLayout`; no API/Liveblocks wiring; `npx next build` passes
+
+- `feature-specs/21-canvas-autosave.md` — `canvasBlobUrl` on `Project` (pointer only; `canvasJsonPath` remains Liveblocks room slug); `@vercel/blob` upload at `projects/[projectId]/canvas.json` (`allowOverwrite`, no suffix); `GET`/`PUT` `/api/projects/[projectId]/canvas` with Clerk + `evaluateProjectAccess`; `use-canvas-autosave.ts` (5s debounce, idle/saving/saved/error + retry); `use-canvas-hydration.ts` in `TraceCanvasInner` (single `useLiveblocksFlow`; hydrate from blob only when flow is empty); `CanvasSaveProvider` + `CanvasSaveStatus` in navbar; empty canvas initial (removed dummy seed on load); `BLOB_READ_WRITE_TOKEN` in `.env.example`; `npx next build` passes
+
+- `feature-specs/22-design-agent-api.md` — `TaskRun` Prisma model + migration `add_task_run_model`; `chaosAgentTask` in `trigger/chaos-agent.ts` (mock orchestration logs only); `POST /api/ai/design` (Clerk + `evaluateProjectAccess`, `tasks.trigger`, persist `runId`); `POST /api/ai/design/token` (owner check via `TaskRun`, `auth.createPublicToken` scoped to run); helpers in `src/lib/ai-design-api.ts`; no LLM or Liveblocks mutation; `npm run build` passes
+
+- `feature-specs/23-design-agent-logic.md` — `chaosAgentTask` uses Vercel AI SDK `generateObject` + `canvasMutationSchema` (OpenRouter Nemotron); live graph via `getStorageDocument` JSON (never Postgres); `mutateFlow` applies `UPDATE_NODE` / `ADD_EDGE_ALERT`; headless `setPresence` for `ai-agent` (cursor path, `isThinking`, `finally` cleanup); `agentActivity` LiveList milestones in room storage; `src/lib/chaos-agent/*`; AI sidebar `AiAgentStatus` + thinking glow + `Inject Chaos` → `POST /api/ai/design`; `npm run build` passes
+
+- `feature-specs/24-ai-presence-state.md` — `AIStatusMessageSchema` in `src/types/tasks.ts`; `Storage.aiStatusMessages` LiveList + `pushAiStatusMessage` in `liveblocks-chaos.ts`; `useRoomIsThinking` hook; sidebar textarea disabled + `Injecting Chaos...` button when any peer `isThinking`; `AiAgentStatus` shows latest validated status only; `PresenceBar` avatar + `CanvasPeerCursors` name-badge spinners; `npm run build` passes
+
+- `feature-specs/25-sidebar-chat-feed.md` — `AIChatMessageSchema` + `parseAiChatMessages` / `resolveChatAvatarUrl` in `src/types/tasks.ts`; `Storage.aiChatMessages` LiveList in `liveblocks.config.ts`; `usePushAiChatMessage` hook; `AiArchitectTab` subscribes to Liveblocks chat (timestamp order, avatars, auto-scroll anchor); Enter sends validated user messages with Clerk profile; `Inject Chaos` button unchanged (no chat pollution); send error + retry above input (`--state-error`); `AiChatMessageBubble` styling per spec; `npm run build` passes
+
+- `feature-specs/26-design-agent-frontend.md` — `SimulationSidebar` owns `runningJob` + `useRealtimeRun` (`@trigger.dev/react-hooks`); `Inject Chaos` pushes user chat then `POST /api/ai/design` (returns `runId` + `publicToken`); locks textarea/button while run active; assistant success line on `COMPLETED`; status ribbon above input from latest `aiStatusMessages` while job runs; canvas updates via Liveblocks only (no client graph mutation); `npm run build` passes
+
+- `feature-specs/27-spec-generation-flow.md` — `generateSpecTask` in `trigger/generate-spec.ts` (`schemaTask` + `GenerateSpecInputSchema`, Vercel AI SDK + `@ai-sdk/google` Gemini, `metadata` progress heartbeats, Markdown output); `POST /api/ai/spec` resolves `projectId` from `roomId` via `evaluateProjectAccess` (rejects client `projectId`), triggers task, persists `TaskRun`, returns `runId` only; `POST /api/ai/spec/token` owner check + `auth.createPublicToken` scoped to run with `expirationTime: "1h"`; helpers in `src/lib/ai-spec-api.ts`, `src/lib/google-ai.ts`, `src/lib/spec-agent/build-spec-system-prompt.ts`; `GOOGLE_GENERATIVE_AI_API_KEY` in `.env.example`; no spec UI or Blob persistence; `npm run build` passes
+
+- `feature-specs/28-spec-persistent-download.md` — `ProjectSpec` Prisma model + migration `add_project_spec_table`; `src/lib/spec-persistence.ts` (Vercel Blob at `projects/[projectId]/specs/[specId].md`, Prisma metadata only); `generateSpecTask` archives markdown after generation (`archiving` metadata step, returns `{ specId, markdown }`); `GET /api/projects/[projectId]/specs/[specId]/download` (Clerk 401, `evaluateProjectAccess` 403, spec-to-project 404, server-side blob fetch, attachment headers); no spec list/preview UI; `npm run build` passes
+
+- `feature-specs/29-spec-ui-integration.md` — RSC `listProjectSpecsForProject` on `/editor/[roomId]` → `EditorLayout` → `SimulationSidebar` → `AiSpecsTab`; `GET /api/projects/[projectId]/specs` + `GET .../specs/[specId]` (JSON markdown, no blob URLs in payloads); shared `src/lib/specs-api.ts`; `SpecPreviewDialog` + `MarkdownPreview` (DialogShell `bg-black/80 backdrop-blur-sm`, `max-h-[70vh]` scroll); list rows `trace_ai_playbook_[id].md` + localized dates; download via `<a href="/api/projects/.../download">` on list + modal; `npm run build` passes
+
 
 
 ## In Progress
@@ -70,7 +100,10 @@ Update this file after every meaningful implementation change.
 
 
 
-- Service panel option forms and AI chaos prompt routing
+- Service panel option forms and canvas node health/degraded visuals
+
+- Configure `BLOB_READ_WRITE_TOKEN` in `.env.local` for canvas autosave in dev/prod
+
 
 
 
@@ -114,6 +147,36 @@ Update this file after every meaningful implementation change.
 
 - Node cluster colors use predefined `NodeColorPair` tokens (`default`, `blue`, `purple`, `amber`); `TraceNodeColorToolbar` updates `flow.nodes[id].data.colorPair` via Liveblocks; missing/invalid values resolve to `default`
 
+- Canvas edges use type `traceEdge` rendered by `OrthogonalTrafficEdge` (`getSmoothStepPath`, orthogonal routing); protocol labels live on `flow.edges[id].data.label` via `useUpdateTraceEdgeLabel`; new connections inherit `defaultEdgeOptions` (arrow marker + empty label)
+
+- Trace nodes expose four cardinal handles (top/left target, bottom/right source) hidden until node hover; `ConnectionMode.Loose` allows cross-port wiring
+
+- Canvas ergonomics: `CanvasControls` + `CanvasKeyboardShortcuts` live inside `<ReactFlow>` as leaf children (safe `useReactFlow` usage); zoom/fit use `{ duration: 200 }`; undo/redo use Liveblocks `useUndo`/`useRedo` with `useCanUndo`/`useCanRedo` for disabled UI; global hotkeys gated away from text fields via `use-keyboard-shortcuts.ts`
+
+- Starter templates: static `STARTER_TEMPLATES` in `src/components/editor/starter-templates.ts`; import replaces all `flow` nodes/edges through Liveblocks `onDelete` + add changes (`use-import-starter-template.ts`); modal + SVG previews in `starter-templates-modal.tsx` / `starter-template-preview.tsx`; `CanvasProvider` wraps the full editor workspace on `/editor/[roomId]` so navbar can open the template dialog inside the active room
+
+- Canvas presence: `PresenceBar` overlays the canvas viewport (`absolute top-4 right-4`); current user excluded from Liveblocks avatar stack and shown only via Clerk `UserButton`; collaborator avatars are display-only with `+N` overflow; `CanvasPeerCursors` tracks pointers on React Flow `domNode`, stores `{ cursor: { x, y } } | null` in flow coordinates, and renders peer SVG cursors with name badges (custom implementation, not `@liveblocks/react-flow` `Cursors`, to avoid StoreUpdater loop — see session notes)
+
+- AI sidebar: `SimulationSidebar` is a thin shell; tab UI lives in `src/components/editor/ai-sidebar/` with local React state only (mock user/assistant messages, no streaming routes or Liveblocks mutations yet); dismiss uses `onClose` prop without changing navbar Flame toggle behavior
+
+- Canvas persistence: collaborative state stays in Liveblocks; debounced snapshots (`use-canvas-autosave.ts`, 5s idle) write nodes/edges JSON to Vercel Blob via `PUT /api/projects/[projectId]/canvas`; `Project.canvasBlobUrl` stores the HTTPS pointer only; `GET` hydrates empty rooms once (`use-canvas-hydration.ts` wired in `TraceCanvasInner` only — one `useLiveblocksFlow` per room) without clobbering active peer edits; save status UI in navbar center via `CanvasSaveStatus` + `canvas-save-context.tsx`
+
+- AI design pipeline: `chaosAgentTask` (`trigger/chaos-agent.ts`) triggered from `POST /api/ai/design`; reads live `flow` from Liveblocks `getStorageDocument` (JSON); structured mutations via `generateObject` + `src/lib/chaos-agent/canvas-mutation-schema.ts`; applies changes with `@liveblocks/react-flow/node` `mutateFlow`; broadcasts `ai-agent` presence (`setPresence`) and `agentActivity` LiveList; `finally` clears presence locks; `TaskRun` maps Trigger `runId` → `projectId` + initiating Clerk `userId`; `POST /api/ai/design/token` issues read-scoped public tokens only when `TaskRun.userId` matches session; routes under `/api/ai/*` use Clerk `auth.protect()` without session cookie stripping (unlike `/api/simulation` / `/api/trigger`)
+
+- Chaos agent storage: `Storage.agentActivity` (`LiveList<string>`) legacy milestones; `Storage.aiStatusMessages` (`LiveList<AIStatusMessage>`) validated status stream (sidebar shows latest entry only); `CHAOS_AGENT_USER_ID` (`ai-agent`) for headless presence; helpers in `src/lib/chaos-agent/liveblocks-chaos.ts`
+
+- AI presence UI: `useRoomIsThinking` aggregates any peer `presence.isThinking`; chaos prompt locks while thinking; cursor/name-badge and avatar stack micro-spinners in `canvas-cursors.tsx` and `presence-bar.tsx`
+
+- Workspace chat: `Storage.aiChatMessages` (`LiveList<AIChatMessage>`) is room-scoped operator chat only; `aiStatusMessages` remains AI progress metrics; client push via `usePushAiChatMessage`; Zod validation on read (`parseAiChatMessages`) and write; local user bubbles right-aligned (blue), remote/assistant left (zinc); Enter sends chat only; `Inject Chaos` also dispatches `POST /api/ai/design` and tracks the run in `SimulationSidebar`
+
+- Design agent UI: `SimulationSidebar` stores `{ runId, publicToken }`, subscribes with `useRealtimeRun`, and tears down on completion; `POST /api/ai/design` returns scoped `publicToken` alongside `runId`; architect tab shows latest `aiStatusMessages` ribbon only while a run is active; no client-side React Flow mutation from the sidebar
+
+- Spec generation pipeline: `generateSpecTask` (`trigger/generate-spec.ts`) triggered from `POST /api/ai/spec` with canvas `nodes`/`edges` + `chatHistory` payload; server resolves `projectId` from `roomId` only; `POST /api/ai/spec/token` mints read-scoped public tokens (1h TTL) when `TaskRun.userId` matches session; task streams `metadata.status` / `metadata.completionPercent` for client hooks; on completion archives Markdown to Vercel Blob and inserts `ProjectSpec` (blob URL in `filePath` only, not Postgres body text)
+
+- Spec persistence & download: `ProjectSpec` links `projectId` → Blob HTTPS URL; `archiveProjectSpec` in `src/lib/spec-persistence.ts`; gated download at `GET /api/projects/[projectId]/specs/[specId]/download` (never expose raw blob URLs to clients in API JSON)
+
+- Spec UI: `listProjectSpecsForProject` (RSC cache) hydrates `AiSpecsTab`; preview via `GET /api/projects/[projectId]/specs/[specId]`; list via `GET /api/projects/[projectId]/specs`; helpers in `src/lib/specs-api.ts`; `SpecPreviewDialog` + `MarkdownPreview` in `src/components/editor/ai-sidebar/`; downloads use gated `/download` route only
+
 - Persistent database: Supabase PostgreSQL only, accessed via Prisma (`DATABASE_URL` + `DIRECT_URL` session/transaction poolers on IPv4)
 
 - Prisma client lives at `src/lib/prisma.ts`; Clerk user sync in `src/server/actions/sync-clerk-user.ts`
@@ -136,7 +199,7 @@ Update this file after every meaningful implementation change.
 
 - Do not call `useReactFlow()` inside `TraceCanvasInner` — it subscribes to the xyflow zustand store (`useStore((s) => !!s.panZoom)`) and re-renders the canvas on store updates, which can chain into a StoreUpdater feedback loop. Use `useStoreApi()` + `pointToFlowPosition` from `src/lib/canvas/screen-to-flow.ts` for screen→flow math.
 
-- `<Cursors />` from `@liveblocks/react-flow` is temporarily removed from the canvas. Re-add only after verifying it does not reintroduce the StoreUpdater loop in the new non-suspense setup.
+- Peer cursors use custom `CanvasPeerCursors` (not `@liveblocks/react-flow` `Cursors`) to avoid the StoreUpdater / Suspense update loop documented in `current-issues.md`.
 
 
 

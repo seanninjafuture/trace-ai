@@ -1,11 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
+import { CanvasProvider, CanvasSurface } from "@/components/canvas/canvas-provider";
+import { TraceCanvas } from "@/components/canvas/trace-canvas";
 import { AccessDenied } from "@/components/editor/access-denied";
 import { EditorLayout } from "@/components/editor/editor-layout";
-import { CanvasProvider } from "@/components/canvas/canvas-provider";
 import { evaluateProjectAccess } from "@/lib/project-access";
 import { slugifyProjectName } from "@/lib/slugify";
+import { listProjectSpecsForProject } from "@/server/projects/list-project-specs";
 import type { WorkspaceProject } from "@/types/project";
 
 type EditorRoomPageProps = {
@@ -33,9 +35,21 @@ export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
     owned: project.ownerId === userId,
   };
 
+  const projectSpecs = await listProjectSpecsForProject(project.id);
+
   return (
-    <EditorLayout workspaceProject={workspaceProject}>
-      <CanvasProvider roomId={workspaceProject.slug} />
-    </EditorLayout>
+    <CanvasProvider
+      roomId={workspaceProject.slug}
+      projectId={workspaceProject.id}
+    >
+      <EditorLayout
+        workspaceProject={workspaceProject}
+        projectSpecs={projectSpecs}
+      >
+        <CanvasSurface>
+          <TraceCanvas />
+        </CanvasSurface>
+      </EditorLayout>
+    </CanvasProvider>
   );
 }

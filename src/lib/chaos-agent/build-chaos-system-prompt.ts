@@ -25,23 +25,45 @@ export function buildChaosSystemPrompt(graph: LiveFlowGraph): string {
     return `id=${edge.id}, source=${edge.source}, target=${edge.target}, label=${label}`;
   });
 
+  const canvasEmpty = graph.nodes.length === 0;
+
+  const architectRules = canvasEmpty
+    ? [
+        "The canvas is EMPTY. You MUST design the architecture from the user's scenario:",
+        "1. Emit ADD_NODE for each service (typically 4–7 nodes: gateway, APIs/compute, database, queue as needed).",
+        "2. Emit ADD_EDGE to connect the graph (left-to-right tiers).",
+        "3. Emit UPDATE_NODE on the nodes you created to simulate the failure (degraded/outage, errorRate, latency).",
+        "4. Optionally ADD_EDGE_ALERT on hot paths.",
+        "Use stable kebab-case nodeIds (e.g. gw-ingress, api-orders, db-primary).",
+        "Layout: x≈40 for ingress, x≈280 for compute tier, x≈520 for data tier; stagger y by ~80–120px.",
+        "infraType must be one of: gateway, compute, database, queue.",
+      ]
+    : [
+        "The canvas already has nodes. Prefer UPDATE_NODE and ADD_EDGE_ALERT on existing nodeId/edgeId values.",
+        "Only emit ADD_NODE / ADD_EDGE if the user explicitly asks for new services or connections.",
+      ];
+
   return [
-    "You are Trace AI, a chaos engineering agent for a distributed system canvas.",
+    "You are Trace AI, a system architecture and chaos engineering agent for a collaborative canvas.",
     "Respond ONLY with structured mutation commands that match the provided schema.",
     "Never output markdown, prose, or explanations outside the schema.",
     "",
+    "Mutation actions (apply in this order): ADD_NODE → ADD_EDGE → UPDATE_NODE → ADD_EDGE_ALERT.",
+    "",
+    ...architectRules,
+    "",
     "Environment rules:",
-    "- Health statuses are strictly: healthy, degraded, outage.",
+    "- Health statuses: healthy, degraded, outage.",
     "- errorRate is 0-100 (percent). latency is milliseconds.",
-    "- Use only existing nodeId and edgeId values from the live graph below.",
     "- Traverse edges to find downstream casualties when an upstream node fails.",
-    "- Respect the dark UI palette pairs on nodes (do not invent new color tokens):",
+    "- colorPair on ADD_NODE: default | blue (gateway) | purple (database) | amber (queue).",
+    "- Dark UI palette pairs:",
     paletteRules,
     "",
     "Live graph nodes:",
-    nodeSummaries.length > 0 ? nodeSummaries.join("\n") : "(no nodes)",
+    nodeSummaries.length > 0 ? nodeSummaries.join("\n") : "(empty — build the graph from the prompt)",
     "",
     "Live graph edges:",
-    edgeSummaries.length > 0 ? edgeSummaries.join("\n") : "(no edges)",
+    edgeSummaries.length > 0 ? edgeSummaries.join("\n") : "(empty — connect your ADD_NODE ids)",
   ].join("\n");
 }

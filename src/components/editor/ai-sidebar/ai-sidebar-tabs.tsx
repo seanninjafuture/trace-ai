@@ -20,6 +20,7 @@ type AiSidebarTabsProps = {
   projectSpecs?: ProjectSpecSummary[];
   isSimulationRunning?: boolean;
   showSimulationStatusRibbon?: boolean;
+  simulationError?: string | null;
   onStartChaosSimulation?: (prompt: string) => Promise<void>;
 };
 
@@ -29,6 +30,7 @@ export function AiSidebarTabs({
   projectSpecs = [],
   isSimulationRunning = false,
   showSimulationStatusRibbon = false,
+  simulationError = null,
   onStartChaosSimulation,
 }: AiSidebarTabsProps) {
   return (
@@ -58,6 +60,7 @@ export function AiSidebarTabs({
           roomId={roomId}
           isSimulationRunning={isSimulationRunning}
           showSimulationStatusRibbon={showSimulationStatusRibbon}
+          simulationError={simulationError}
           onStartChaosSimulation={onStartChaosSimulation}
         />
       </TabsContent>

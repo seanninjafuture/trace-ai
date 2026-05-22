@@ -34,6 +34,7 @@ type AiArchitectTabProps = {
   roomId?: string;
   isSimulationRunning?: boolean;
   showSimulationStatusRibbon?: boolean;
+  simulationError?: string | null;
   onStartChaosSimulation?: (prompt: string) => Promise<void>;
 };
 
@@ -45,6 +46,7 @@ export function AiArchitectTab({
   roomId,
   isSimulationRunning = false,
   showSimulationStatusRibbon = false,
+  simulationError = null,
   onStartChaosSimulation,
 }: AiArchitectTabProps) {
   const formId = useId();
@@ -125,19 +127,21 @@ export function AiArchitectTab({
         return;
       }
 
-      const payload = buildChatMessage(trimmed);
-      if (payload) {
-        setSendError(null);
-        try {
-          pushChatMessage(payload);
-          setDraft("");
-        } catch {
-          setSendError({ content: trimmed });
-          return;
-        }
-      }
+      setSendError(null);
+      setDraft("");
 
       await onStartChaosSimulation(trimmed);
+
+      const payload = buildChatMessage(trimmed);
+      if (!payload) {
+        return;
+      }
+
+      try {
+        pushChatMessage(payload);
+      } catch {
+        setSendError({ content: trimmed });
+      }
     },
     [
       buildChatMessage,
@@ -158,7 +162,7 @@ export function AiArchitectTab({
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      void sendChatMessage(draft);
+      void injectChaos(draft);
     }
   };
 
@@ -186,7 +190,8 @@ export function AiArchitectTab({
                 <Bot className="size-8 text-accent-primary/80" />
               </div>
               <p className="text-center text-xs text-text-muted">
-                Describe a failure scenario or pick a shortcut
+                Describe your system and failure — Trace AI will draw the
+                architecture and simulate impact on the canvas
               </p>
               <div className="flex max-w-full flex-col items-center gap-2">
                 {AI_ARCHITECT_SHORTCUTS.map((label) => (
@@ -235,6 +240,14 @@ export function AiArchitectTab({
             Message failed to send. Click to retry.
           </button>
         ) : null}
+        {simulationError ? (
+          <p
+            className="mb-2 text-xs leading-snug text-[var(--state-error)]"
+            role="alert"
+          >
+            {simulationError}
+          </p>
+        ) : null}
         {showSimulationStatusRibbon && statusRibbonLabel ? (
           <p
             className="mb-2 truncate text-[11px] leading-snug text-text-muted"
@@ -248,7 +261,7 @@ export function AiArchitectTab({
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message the team in this workspace..."
+            placeholder="e.g. API gateway, order service, Postgres — simulate DB outage under Black Friday load…"
             rows={3}
             disabled={inputLocked}
             className="min-h-[72px] max-h-[160px] resize-none overflow-y-auto rounded-md border-border-default bg-zinc-950 p-2 pr-28 text-sm disabled:cursor-not-allowed disabled:opacity-60"
@@ -265,10 +278,10 @@ export function AiArchitectTab({
             {isSimulationRunning ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                Injecting Chaos...
+                Running scenario...
               </>
             ) : (
-              "Inject Chaos"
+              "Run scenario"
             )}
           </Button>
         </div>

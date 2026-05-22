@@ -19,6 +19,7 @@ import "@liveblocks/react-flow/styles.css";
 
 import { CanvasPeerCursors } from "@/components/canvas/canvas-cursors";
 import {
+  useCanvasAutosaveEnabled,
   useCanvasSaveContext,
   useCanvasSaveStatusSetter,
 } from "@/components/canvas/canvas-save-context";
@@ -56,6 +57,7 @@ const DEFAULT_EDGE_OPTIONS = {
 function TraceCanvasInner() {
   const saveContext = useCanvasSaveContext();
   const setSaveStatus = useCanvasSaveStatusSetter();
+  const { enabled: autosaveEnabled } = useCanvasAutosaveEnabled();
   const persistenceProjectId = saveContext?.projectId;
 
   const result = useLiveblocksFlow<TraceCanvasNode, TraceCanvasEdge>({
@@ -90,7 +92,7 @@ function TraceCanvasInner() {
     nodes: flowNodes,
     edges: flowEdges,
     isLoading: flowIsLoading,
-    enabled: Boolean(persistenceProjectId),
+    enabled: Boolean(persistenceProjectId) && autosaveEnabled,
     onStatusChange: setSaveStatus,
   });
 
@@ -100,8 +102,12 @@ function TraceCanvasInner() {
   const lastEdgesRef = useRef<TraceCanvasEdge[]>([]);
 
   if (!result.isLoading) {
-    lastNodesRef.current = result.nodes;
-    lastEdgesRef.current = result.edges;
+    if (Array.isArray(result.nodes)) {
+      lastNodesRef.current = result.nodes;
+    }
+    if (Array.isArray(result.edges)) {
+      lastEdgesRef.current = result.edges;
+    }
   }
 
   const nodes = lastNodesRef.current;

@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -11,10 +12,15 @@ import {
 
 export type CanvasSaveStatus = "idle" | "saving" | "saved" | "error";
 
+const autosaveStorageKey = (projectId: string) =>
+  `trace-autosave-enabled:${projectId}`;
+
 type CanvasSaveContextValue = {
   projectId: string;
   status: CanvasSaveStatus;
   setStatus: (status: CanvasSaveStatus) => void;
+  autosaveEnabled: boolean;
+  setAutosaveEnabled: (enabled: boolean) => void;
 };
 
 const CanvasSaveContext = createContext<CanvasSaveContextValue | null>(null);
@@ -29,10 +35,43 @@ export function CanvasSaveProvider({
   children,
 }: CanvasSaveProviderProps) {
   const [status, setStatus] = useState<CanvasSaveStatus>("idle");
+  const [autosaveEnabled, setAutosaveEnabledState] = useState(true);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(autosaveStorageKey(projectId));
+      if (stored === "false") {
+        setAutosaveEnabledState(false);
+      }
+    } catch {
+      // localStorage unavailable (private mode, etc.)
+    }
+  }, [projectId]);
+
+  const setAutosaveEnabled = useCallback(
+    (enabled: boolean) => {
+      setAutosaveEnabledState(enabled);
+      try {
+        localStorage.setItem(autosaveStorageKey(projectId), String(enabled));
+      } catch {
+        // ignore
+      }
+      if (!enabled) {
+        setStatus("idle");
+      }
+    },
+    [projectId]
+  );
 
   const value = useMemo(
-    () => ({ projectId, status, setStatus }),
-    [projectId, status]
+    () => ({
+      projectId,
+      status,
+      setStatus,
+      autosaveEnabled,
+      setAutosaveEnabled,
+    }),
+    [projectId, status, autosaveEnabled, setAutosaveEnabled]
   );
 
   return (
@@ -60,4 +99,15 @@ export function useCanvasSaveStatusSetter(): (status: CanvasSaveStatus) => void 
     },
     [context]
   );
+}
+
+export function useCanvasAutosaveEnabled(): {
+  enabled: boolean;
+  setEnabled: (enabled: boolean) => void;
+} {
+  const context = useContext(CanvasSaveContext);
+  return {
+    enabled: context?.autosaveEnabled ?? true,
+    setEnabled: context?.setAutosaveEnabled ?? (() => {}),
+  };
 }

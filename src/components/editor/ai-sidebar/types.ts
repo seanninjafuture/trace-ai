@@ -1,5 +1,5 @@
 export const AI_ARCHITECT_SHORTCUTS = [
-  "Inject standard e-commerce DB outage",
-  "Simulate 10x traffic spike on API",
-  "Trigger message queue replication failure",
+  "E-commerce Black Friday: API gateway, two services, PostgreSQL — DB goes down under 10x traffic",
+  "Event-driven pipeline with queue backlog and slow workers",
+  "Three-tier web app with regional database outage and cascading API errors",
 ] as const;

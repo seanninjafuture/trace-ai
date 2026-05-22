@@ -5,6 +5,7 @@ import { CanvasProvider, CanvasSurface } from "@/components/canvas/canvas-provid
 import { TraceCanvas } from "@/components/canvas/trace-canvas";
 import { AccessDenied } from "@/components/editor/access-denied";
 import { EditorLayout } from "@/components/editor/editor-layout";
+import { ensureLiveblocksRoom } from "@/lib/ensure-liveblocks-room";
 import { evaluateProjectAccess } from "@/lib/project-access";
 import { slugifyProjectName } from "@/lib/slugify";
 import { listProjectSpecsForProject } from "@/server/projects/list-project-specs";
@@ -37,6 +38,15 @@ export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
 
   const projectSpecs = await listProjectSpecsForProject(project.id);
 
+  try {
+    await ensureLiveblocksRoom(workspaceProject.slug);
+  } catch (error) {
+    console.error("[editor] ensure Liveblocks room failed", {
+      roomId: workspaceProject.slug,
+      error,
+    });
+  }
+
   return (
     <CanvasProvider
       roomId={workspaceProject.slug}
@@ -45,6 +55,8 @@ export default async function EditorRoomPage({ params }: EditorRoomPageProps) {
       <EditorLayout
         workspaceProject={workspaceProject}
         projectSpecs={projectSpecs}
+        liveblocksRoom
+        liveblocksRoomId={workspaceProject.slug}
       >
         <CanvasSurface>
           <TraceCanvas />

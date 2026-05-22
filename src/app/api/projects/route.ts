@@ -7,7 +7,9 @@ import {
   requireAuthenticatedUserInDatabase,
   resolveProjectName,
 } from "@/lib/projects-api";
+import { ensureLiveblocksRoom } from "@/lib/ensure-liveblocks-room";
 import { prisma } from "@/lib/prisma";
+import { slugifyProjectName } from "@/lib/slugify";
 
 export async function GET() {
   const authResult = await requireAuthenticatedUserInDatabase();
@@ -47,6 +49,18 @@ export async function POST(req: Request) {
       canvasJsonPath,
     },
   });
+
+  const liveblocksRoomId =
+    project.canvasJsonPath.trim() || slugifyProjectName(project.name);
+
+  try {
+    await ensureLiveblocksRoom(liveblocksRoomId);
+  } catch (error) {
+    console.error("[projects] ensure Liveblocks room failed", {
+      liveblocksRoomId,
+      error,
+    });
+  }
 
   return NextResponse.json(project, { status: 201 });
 }

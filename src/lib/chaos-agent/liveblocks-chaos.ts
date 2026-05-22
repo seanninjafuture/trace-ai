@@ -10,17 +10,26 @@ import {
   CHAOS_AGENT_PRESENCE_TTL_SECONDS,
   CHAOS_AGENT_USER_ID,
 } from "@/lib/chaos-agent/constants";
+import {
+  traceEdgeFromAddMutation,
+  traceNodeFromAddMutation,
+} from "@/lib/chaos-agent/build-trace-node-from-mutation";
 import type { CanvasMutationPlan } from "@/lib/chaos-agent/canvas-mutation-schema";
+import { sortCanvasMutations } from "@/lib/chaos-agent/sort-canvas-mutations";
 import {
   nodeFlowCenter,
   parseLiveFlowGraph,
   type LiveFlowGraph,
 } from "@/lib/chaos-agent/parse-live-flow-graph";
+import { ensureLiveblocksRoom } from "@/lib/ensure-liveblocks-room";
 import { assignUserColor, getLiveblocksClient } from "@/lib/liveblocks";
 import type { TraceCanvasEdge, TraceCanvasNode } from "@/types/canvas";
 import {
+  AIChatMessageSchema,
   AIStatusMessageSchema,
+  type AIChatMessage,
   type AIStatusMessage,
+  resolveChatAvatarUrl,
 } from "@/types/tasks";
 
 export type ChaosAgentPresence = {
@@ -39,10 +48,72 @@ export function getChaosLiveblocksClient(): Liveblocks {
   return getLiveblocksClient();
 }
 
-export async function fetchLiveFlowGraph(roomId: string): Promise<LiveFlowGraph> {
+/** Read-only storage JSON (room must exist — call `ensureLiveblocksRoom` first). */
+async function fetchLiveFlowGraphFromDocument(
+  roomId: string
+): Promise<LiveFlowGraph> {
   const client = getChaosLiveblocksClient();
-  const document = await client.getStorageDocument(roomId, "json");
-  return parseLiveFlowGraph(document);
+
+  try {
+    const document = await client.getStorageDocument(roomId, "json");
+    return parseLiveFlowGraph(document);
+  } catch {
+    return { nodes: [], edges: [] };
+  }
+}
+
+export async function fetchLiveFlowGraph(roomId: string): Promise<LiveFlowGraph> {
+  await ensureLiveblocksRoom(roomId);
+  return fetchLiveFlowGraphFromDocument(roomId);
+}
+
+async function resolveGraphForRooms(
+  liveblocksRoomId: string,
+  projectId: string
+): Promise<{ graph: LiveFlowGraph; activeRoomId: string }> {
+  const primary = await fetchLiveFlowGraph(liveblocksRoomId);
+
+  if (primary.nodes.length > 0) {
+    return { graph: primary, activeRoomId: liveblocksRoomId };
+  }
+
+  if (projectId !== liveblocksRoomId) {
+    const legacy = await fetchLiveFlowGraph(projectId);
+    if (legacy.nodes.length > 0) {
+      console.warn(
+        `[Chaos Agent] graph found in legacy room "${projectId}" (canonical: "${liveblocksRoomId}")`
+      );
+      return { graph: legacy, activeRoomId: projectId };
+    }
+  }
+
+  return { graph: primary, activeRoomId: liveblocksRoomId };
+}
+
+const GRAPH_FETCH_RETRY_DELAYS_MS = [0, 400, 900, 1800] as const;
+
+/**
+ * Some legacy sessions stored graph data under the project id room instead of
+ * canvasJsonPath. Retries give Liveblocks a moment to sync after template import.
+ */
+export async function fetchLiveFlowGraphForProject(
+  liveblocksRoomId: string,
+  projectId: string
+): Promise<{ graph: LiveFlowGraph; activeRoomId: string }> {
+  let last = await resolveGraphForRooms(liveblocksRoomId, projectId);
+
+  for (let i = 1; i < GRAPH_FETCH_RETRY_DELAYS_MS.length; i++) {
+    if (last.graph.nodes.length > 0) {
+      return last;
+    }
+
+    const delay =
+      GRAPH_FETCH_RETRY_DELAYS_MS[i]! - GRAPH_FETCH_RETRY_DELAYS_MS[i - 1]!;
+    await sleep(delay);
+    last = await resolveGraphForRooms(liveblocksRoomId, projectId);
+  }
+
+  return last;
 }
 
 async function setChaosAgentPresence(
@@ -60,6 +131,37 @@ async function setChaosAgentPresence(
       color: assignUserColor(CHAOS_AGENT_USER_ID),
     },
     ttl: CHAOS_AGENT_PRESENCE_TTL_SECONDS,
+  });
+}
+
+export async function pushAiAssistantChatMessage(
+  roomId: string,
+  content: string
+): Promise<void> {
+  const message = AIChatMessageSchema.parse({
+    id: randomUUID(),
+    roomId,
+    sender: {
+      id: CHAOS_AGENT_USER_ID,
+      name: CHAOS_AGENT_DISPLAY_NAME,
+      avatar: resolveChatAvatarUrl(null, CHAOS_AGENT_DISPLAY_NAME),
+    },
+    role: "assistant",
+    content,
+    timestamp: Date.now(),
+  });
+
+  const client = getChaosLiveblocksClient();
+
+  await client.mutateStorage(roomId, ({ root }) => {
+    let chatMessages = root.get("aiChatMessages");
+
+    if (!chatMessages) {
+      chatMessages = new LiveList<AIChatMessage>([]);
+      root.set("aiChatMessages", chatMessages);
+    }
+
+    chatMessages.push(message);
   });
 }
 
@@ -108,6 +210,7 @@ export async function pushAgentActivity(
 }
 
 export async function beginChaosAgentSession(roomId: string): Promise<void> {
+  await ensureLiveblocksRoom(roomId);
   await setChaosAgentPresence(roomId, {
     cursor: null,
     activeNodeId: null,
@@ -121,13 +224,15 @@ export async function beginChaosAgentSession(roomId: string): Promise<void> {
   );
 }
 
-export async function markAgentProcessing(roomId: string): Promise<void> {
+export async function markAgentProcessing(
+  roomId: string,
+  options?: { architectMode?: boolean }
+): Promise<void> {
   await pushAgentActivity(roomId, AGENT_ACTIVITY_PROCESSING);
-  await pushAiStatusMessage(
-    roomId,
-    "processing",
-    "Calculating downstream cascading latency vectors across API channels..."
-  );
+  const text = options?.architectMode
+    ? "Designing services on the canvas from your scenario, then simulating failure blast radius..."
+    : "Calculating downstream cascading latency vectors across API channels...";
+  await pushAiStatusMessage(roomId, "processing", text);
 }
 
 export async function markAgentApplying(roomId: string): Promise<void> {
@@ -138,21 +243,63 @@ export async function markAgentApplying(roomId: string): Promise<void> {
   );
 }
 
+export type CanvasApplyResult = {
+  nodesAdded: number;
+  edgesAdded: number;
+  nodesUpdated: number;
+};
+
+function buildCompleteChatMessage(result: CanvasApplyResult): string {
+  const { nodesAdded, edgesAdded, nodesUpdated } = result;
+  const total = nodesAdded + nodesUpdated;
+
+  if (total === 0 && edgesAdded === 0) {
+    return "Simulation finished but nothing was applied to the canvas. Try a more specific scenario (e.g. services, failure type, and scale).";
+  }
+
+  const parts: string[] = [];
+  if (nodesAdded > 0) {
+    parts.push(
+      `placed ${nodesAdded} service${nodesAdded === 1 ? "" : "s"} on the canvas`
+    );
+  }
+  if (edgesAdded > 0) {
+    parts.push(`connected ${edgesAdded} link${edgesAdded === 1 ? "" : "s"}`);
+  }
+  if (nodesUpdated > 0) {
+    parts.push(
+      `degraded ${nodesUpdated} node${nodesUpdated === 1 ? "" : "s"} for the scenario`
+    );
+  }
+
+  return `Scenario applied: ${parts.join(", ")}. Check the canvas for topology and health indicators.`;
+}
+
 export async function completeAgentActivity(
   roomId: string,
-  nodesMutatedCount: number
+  result: CanvasApplyResult
 ): Promise<void> {
-  const summary = `Failure injection successful. ${nodesMutatedCount} node${nodesMutatedCount === 1 ? "" : "s"} degraded.`;
+  const summary =
+    result.nodesAdded > 0
+      ? `Architecture built (${result.nodesAdded} nodes, ${result.edgesAdded} edges) and failure injected (${result.nodesUpdated} nodes updated).`
+      : `Failure injection successful. ${result.nodesUpdated} node${result.nodesUpdated === 1 ? "" : "s"} updated.`;
+
   await pushAgentActivity(roomId, `[COMPLETE]: ${summary}`);
   await pushAiStatusMessage(roomId, "complete", summary);
+  await pushAiAssistantChatMessage(roomId, buildCompleteChatMessage(result));
 }
 
 export async function failAgentActivity(
   roomId: string,
   reason: string
 ): Promise<void> {
+  const chatLine = /rate.?limit|429|quota|credit/i.test(reason)
+    ? `Chaos simulation failed (API limit): ${reason}`
+    : `Chaos simulation failed: ${reason}`;
+
   await pushAgentActivity(roomId, `[FAILED]: ${reason}`);
   await pushAiStatusMessage(roomId, "failed", reason);
+  await pushAiAssistantChatMessage(roomId, chatLine);
 }
 
 export async function moveAgentCursorToNode(
@@ -189,14 +336,42 @@ export async function animateAgentCursorPath(
 export async function applyCanvasMutations(
   roomId: string,
   plan: CanvasMutationPlan
-): Promise<number> {
+): Promise<CanvasApplyResult> {
+  await ensureLiveblocksRoom(roomId);
   const client = getChaosLiveblocksClient();
-  let nodesMutated = 0;
+  const result: CanvasApplyResult = {
+    nodesAdded: 0,
+    edgesAdded: 0,
+    nodesUpdated: 0,
+  };
+
+  const ordered = sortCanvasMutations(plan.mutations);
 
   await mutateFlow<TraceCanvasNode, TraceCanvasEdge>(
     { client, roomId, storageKey: "flow" },
     (flow) => {
-      for (const mutation of plan.mutations) {
+      for (const mutation of ordered) {
+        if (mutation.action === "ADD_NODE") {
+          if (flow.getNode(mutation.nodeId)) {
+            continue;
+          }
+          flow.addNode(traceNodeFromAddMutation(mutation));
+          result.nodesAdded += 1;
+          continue;
+        }
+
+        if (mutation.action === "ADD_EDGE") {
+          if (flow.getEdge(mutation.edgeId)) {
+            continue;
+          }
+          if (!flow.getNode(mutation.source) || !flow.getNode(mutation.target)) {
+            continue;
+          }
+          flow.addEdge(traceEdgeFromAddMutation(mutation));
+          result.edgesAdded += 1;
+          continue;
+        }
+
         if (mutation.action === "UPDATE_NODE") {
           const existing = flow.getNode(mutation.nodeId);
           if (!existing) {
@@ -208,7 +383,7 @@ export async function applyCanvasMutations(
             errorRate: mutation.errorRate,
             latency: mutation.latency,
           });
-          nodesMutated += 1;
+          result.nodesUpdated += 1;
           continue;
         }
 
@@ -231,7 +406,7 @@ export async function applyCanvasMutations(
     }
   );
 
-  return nodesMutated;
+  return result;
 }
 
 export async function cleanupChaosAgentSession(roomId: string): Promise<void> {

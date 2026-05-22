@@ -8,6 +8,7 @@ import { NodeSidebar } from "@/components/editor/node-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { SimulationSidebar } from "@/components/editor/simulation-sidebar";
+import { SimulationSidebarOffline } from "@/components/editor/simulation-sidebar-offline";
 import { cn } from "@/lib/utils";
 import type { ProjectSpecSummary } from "@/types/project-spec";
 import type { WorkspaceProject } from "@/types/project";
@@ -16,12 +17,18 @@ type EditorLayoutProps = {
   children?: ReactNode;
   workspaceProject?: WorkspaceProject;
   projectSpecs?: ProjectSpecSummary[];
+  /** Set on `/editor/[roomId]` where `CanvasProvider` / `RoomProvider` wrap this layout. */
+  liveblocksRoom?: boolean;
+  /** Liveblocks room id (canvasJsonPath) — must match `CanvasProvider`. */
+  liveblocksRoomId?: string;
 };
 
 export function EditorLayout({
   children,
   workspaceProject,
   projectSpecs = [],
+  liveblocksRoom = false,
+  liveblocksRoomId,
 }: EditorLayoutProps) {
   const {
     activeProject,
@@ -30,9 +37,15 @@ export function EditorLayout({
     isLayoutLoading,
   } = useEditorWorkspace();
 
-  const [simulationSidebarOpen, setSimulationSidebarOpen] = useState(true);
+  const [simulationSidebarOpen, setSimulationSidebarOpen] = useState(liveblocksRoom);
 
   const resolvedProject = activeProject ?? workspaceProject ?? null;
+  const simulationProjectId = resolvedProject?.id;
+  const simulationRoomId =
+    liveblocksRoomId ?? resolvedProject?.slug ?? undefined;
+  const canRunLiveSimulation = Boolean(
+    liveblocksRoom && simulationProjectId && simulationRoomId
+  );
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg-base">
@@ -89,12 +102,18 @@ export function EditorLayout({
         </main>
 
         {simulationSidebarOpen ? (
-          <SimulationSidebar
-            projectId={resolvedProject?.id}
-            roomId={resolvedProject?.slug}
-            projectSpecs={projectSpecs}
-            onClose={() => setSimulationSidebarOpen(false)}
-          />
+          canRunLiveSimulation ? (
+            <SimulationSidebar
+              projectId={simulationProjectId!}
+              roomId={simulationRoomId!}
+              projectSpecs={projectSpecs}
+              onClose={() => setSimulationSidebarOpen(false)}
+            />
+          ) : (
+            <SimulationSidebarOffline
+              onClose={() => setSimulationSidebarOpen(false)}
+            />
+          )
         ) : null}
       </div>
 

@@ -1,16 +1,16 @@
 "use client";
 
-import { AlertCircle, Check, Loader2 } from "lucide-react";
+import { AlertCircle, Check, CloudOff, CloudUpload, Loader2 } from "lucide-react";
 
-import { useCanvasSaveStatus } from "@/components/canvas/canvas-save-context";
+import {
+  useCanvasAutosaveEnabled,
+  useCanvasSaveStatus,
+} from "@/components/canvas/canvas-save-context";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function CanvasSaveStatus() {
+function CanvasSaveStatusLabel() {
   const status = useCanvasSaveStatus();
-
-  if (status === "idle") {
-    return null;
-  }
 
   if (status === "saving") {
     return (
@@ -38,16 +38,56 @@ export function CanvasSaveStatus() {
     );
   }
 
+  if (status === "error") {
+    return (
+      <div
+        className={cn("flex items-center gap-2 text-xs text-state-error")}
+        role="alert"
+        aria-live="assertive"
+      >
+        <AlertCircle className="size-3.5 shrink-0" aria-hidden />
+        <span>Save failed — Retrying</span>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 text-xs text-state-error"
+    <span className="text-xs text-text-muted">Autosave on</span>
+  );
+}
+
+export function CanvasSaveStatus() {
+  const { enabled: autosaveEnabled, setEnabled: setAutosaveEnabled } =
+    useCanvasAutosaveEnabled();
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => setAutosaveEnabled(!autosaveEnabled)}
+        aria-label={autosaveEnabled ? "Disable autosave" : "Enable autosave"}
+        aria-pressed={autosaveEnabled}
+        title={autosaveEnabled ? "Disable autosave" : "Enable autosave"}
+        className={cn(
+          "shrink-0",
+          autosaveEnabled
+            ? "text-text-muted hover:text-text-primary"
+            : "text-text-muted"
+        )}
+      >
+        {autosaveEnabled ? (
+          <CloudUpload className="size-4" aria-hidden />
+        ) : (
+          <CloudOff className="size-4 opacity-70" aria-hidden />
+        )}
+      </Button>
+      {autosaveEnabled ? (
+        <CanvasSaveStatusLabel />
+      ) : (
+        <span className="text-xs text-text-muted">Autosave off</span>
       )}
-      role="alert"
-      aria-live="assertive"
-    >
-      <AlertCircle className="size-3.5 shrink-0" aria-hidden />
-      <span>Save failed — Retrying</span>
     </div>
   );
 }

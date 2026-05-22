@@ -4,6 +4,7 @@ import {
   requireAuthenticatedUserInDatabase,
 } from "@/lib/projects-api";
 import { prisma } from "@/lib/prisma";
+import { slugifyProjectName } from "@/lib/slugify";
 import { NextResponse } from "next/server";
 
 export type DesignRequestBody = {
@@ -69,6 +70,23 @@ export async function requireDesignProjectAccess(projectId: string): Promise<
   }
 
   return { userId: authResult.userId, projectId: project.id };
+}
+
+/** Canonical Liveblocks room id — never trust client-sent roomId alone. */
+export async function resolveProjectLiveblocksRoomId(
+  projectId: string
+): Promise<string | null> {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { canvasJsonPath: true, name: true },
+  });
+
+  if (!project) {
+    return null;
+  }
+
+  const path = project.canvasJsonPath.trim();
+  return path.length > 0 ? path : slugifyProjectName(project.name);
 }
 
 export async function requireTaskRunOwner(runId: string): Promise<

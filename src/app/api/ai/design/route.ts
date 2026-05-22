@@ -4,7 +4,9 @@ import { NextResponse } from "next/server";
 import {
   parseDesignRequestBody,
   requireDesignProjectAccess,
+  resolveProjectLiveblocksRoomId,
 } from "@/lib/ai-design-api";
+import { ensureLiveblocksRoom } from "@/lib/ensure-liveblocks-room";
 import { prisma } from "@/lib/prisma";
 import type { chaosAgentTask } from "@trigger/chaos-agent";
 
@@ -30,9 +32,33 @@ export async function POST(req: Request) {
     return projectAccess.response;
   }
 
+  const liveblocksRoomId = await resolveProjectLiveblocksRoomId(
+    projectAccess.projectId
+  );
+
+  if (!liveblocksRoomId) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  try {
+    await ensureLiveblocksRoom(liveblocksRoomId);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not provision Liveblocks room.";
+    console.error("[chaos-agent] ensure room failed", { liveblocksRoomId, message });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  console.log("[chaos-agent] trigger", {
+    projectId: projectAccess.projectId,
+    liveblocksRoomId,
+    clientRoomId: payload.roomId,
+    promptLength: payload.prompt.length,
+  });
+
   const handle = await tasks.trigger<typeof chaosAgentTask>("chaos-agent-task", {
     prompt: payload.prompt,
-    roomId: payload.roomId,
+    roomId: liveblocksRoomId,
     projectId: projectAccess.projectId,
   });
 

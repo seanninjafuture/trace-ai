@@ -6,6 +6,7 @@ import {
   Background,
   BackgroundVariant,
   ConnectionMode,
+  MarkerType,
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
@@ -16,12 +17,21 @@ import {
 import "@xyflow/react/dist/style.css";
 import "@liveblocks/react-flow/styles.css";
 
-import { CanvasLoadingSkeleton } from "@/components/canvas/canvas-loading-skeleton";
+import { CanvasPeerCursors } from "@/components/canvas/canvas-cursors";
 import {
-  CANVAS_DUMMY_EDGES,
-  CANVAS_DUMMY_NODES,
-} from "@/components/canvas/canvas-dummy-nodes";
-import { traceEdgeTypes } from "@/components/canvas/edges/trace-edge";
+  useCanvasAutosaveEnabled,
+  useCanvasSaveContext,
+  useCanvasSaveStatusSetter,
+} from "@/components/canvas/canvas-save-context";
+import { useCanvasAutosave } from "@/hooks/use-canvas-autosave";
+import { useCanvasHydration } from "@/hooks/use-canvas-hydration";
+import {
+  CanvasControls,
+  CanvasKeyboardShortcuts,
+} from "@/components/canvas/canvas-controls";
+import { PresenceBar } from "@/components/canvas/presence-bar";
+import { CanvasLoadingSkeleton } from "@/components/canvas/canvas-loading-skeleton";
+import { traceEdgeTypes } from "@/components/canvas/edges/orthogonal-edge";
 import { traceNodeTypes } from "@/components/canvas/nodes/trace-node";
 import {
   createTraceCanvasNodeFromPayload,
@@ -33,11 +43,57 @@ import type { TraceCanvasEdge, TraceCanvasNode } from "@/types/canvas";
 
 const PRO_OPTIONS = { hideAttribution: true } as const;
 
+const DEFAULT_EDGE_OPTIONS = {
+  type: "traceEdge",
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 16,
+    height: 16,
+    color: "var(--border-default)",
+  },
+  data: { label: "" },
+} as const;
+
 function TraceCanvasInner() {
+  const saveContext = useCanvasSaveContext();
+  const setSaveStatus = useCanvasSaveStatusSetter();
+  const { enabled: autosaveEnabled } = useCanvasAutosaveEnabled();
+  const persistenceProjectId = saveContext?.projectId;
+
   const result = useLiveblocksFlow<TraceCanvasNode, TraceCanvasEdge>({
     suspense: false,
-    nodes: { initial: CANVAS_DUMMY_NODES },
-    edges: { initial: CANVAS_DUMMY_EDGES },
+    nodes: { initial: [] },
+    edges: { initial: [] },
+  });
+
+  const {
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    onDelete,
+    isLoading: flowIsLoading,
+  } = result;
+
+  const flowNodes = result.isLoading ? [] : (result.nodes ?? []);
+  const flowEdges = result.isLoading ? [] : (result.edges ?? []);
+
+  useCanvasHydration({
+    projectId: persistenceProjectId ?? "",
+    enabled: Boolean(persistenceProjectId),
+    isLoading: flowIsLoading,
+    nodes: flowNodes,
+    edges: flowEdges,
+    onNodesChange,
+    onEdgesChange,
+  });
+
+  useCanvasAutosave({
+    projectId: persistenceProjectId ?? "",
+    nodes: flowNodes,
+    edges: flowEdges,
+    isLoading: flowIsLoading,
+    enabled: Boolean(persistenceProjectId) && autosaveEnabled,
+    onStatusChange: setSaveStatus,
   });
 
   // Hold the last non-null arrays so the StoreUpdater receives stable
@@ -46,13 +102,16 @@ function TraceCanvasInner() {
   const lastEdgesRef = useRef<TraceCanvasEdge[]>([]);
 
   if (!result.isLoading) {
-    lastNodesRef.current = result.nodes;
-    lastEdgesRef.current = result.edges;
+    if (Array.isArray(result.nodes)) {
+      lastNodesRef.current = result.nodes;
+    }
+    if (Array.isArray(result.edges)) {
+      lastEdgesRef.current = result.edges;
+    }
   }
 
   const nodes = lastNodesRef.current;
   const edges = lastEdgesRef.current;
-  const { onNodesChange, onEdgesChange, onConnect, onDelete } = result;
 
   const storeApi = useStoreApi();
   const hasFitViewApplied = useRef(false);
@@ -111,15 +170,17 @@ function TraceCanvasInner() {
 
   return (
     <div
-      className="h-full w-full"
+      className="relative h-full w-full"
       onDragOver={onDragOver}
       onDrop={addNodeFromDrop}
     >
+      <PresenceBar />
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={traceNodeTypes}
         edgeTypes={traceEdgeTypes}
+        defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -141,6 +202,9 @@ function TraceCanvasInner() {
           maskColor="color-mix(in srgb, var(--bg-base) 55%, transparent)"
           nodeColor="var(--accent-primary)"
         />
+        <CanvasControls />
+        <CanvasKeyboardShortcuts />
+        <CanvasPeerCursors />
       </ReactFlow>
     </div>
   );

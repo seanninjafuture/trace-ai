@@ -45,3 +45,7 @@ supabase/.temp
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# trigger.dev local dev
+.trigger/
+

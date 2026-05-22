@@ -35,13 +35,42 @@ model Project {
   description    String?
   status         ProjectStatus         @default(DRAFT)
   canvasJsonPath String                @map("canvas_json_path")
+  canvasBlobUrl  String?               @map("canvas_blob_url")
   createdAt      DateTime              @default(now()) @map("created_at")
   updatedAt      DateTime              @updatedAt @map("updated_at")
   owner          User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   collaborators  ProjectCollaborator[]
+  taskRuns       TaskRun[]
+  specs          ProjectSpec[]
 
   @@index([ownerId, createdAt])
   @@map("projects")
+}
+
+model ProjectSpec {
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")
+  filePath  String   @map("file_path")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_specs")
+}
+
+model TaskRun {
+  id        String   @id @default(cuid())
+  runId     String   @unique @map("run_id")
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
+  @@map("task_runs")
 }
 
 model ProjectCollaborator {

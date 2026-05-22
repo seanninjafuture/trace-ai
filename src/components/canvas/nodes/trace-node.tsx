@@ -25,6 +25,14 @@ const silhouetteClass: Record<InfrastructureNodeType, string> = {
   queue: "rounded-md",
 };
 
+const healthStatusClass = {
+  healthy: "",
+  degraded:
+    "ring-2 ring-amber-500/90 shadow-[0_0_14px_color-mix(in_srgb,#f59e0b_35%,transparent)]",
+  outage:
+    "ring-2 ring-red-500 shadow-[0_0_18px_color-mix(in_srgb,#ef4444_45%,transparent)]",
+} as const;
+
 function useIsNodeLockedByPeer(nodeId: string) {
   return useOthers(
     (others) => others.some((other) => other.presence.activeNodeId === nodeId),
@@ -51,6 +59,7 @@ export function FoundationalNodeRenderer({
   const showResizer = selected && !isPeerLocked;
   const showColorToolbar = selected && !isPeerLocked && !isEditingLabel;
   const colorPair = getNodeColorPairDefinition(data.colorPair);
+  const showHealthMetrics = data.status !== "healthy";
 
   const beginLabelEdit = useCallback(
     (event: React.MouseEvent) => {
@@ -71,15 +80,16 @@ export function FoundationalNodeRenderer({
       <div
         style={{ width: dimensions.width, height: dimensions.height }}
         className={cn(
-          "relative shadow-sm backdrop-blur-md",
+          "group relative shadow-sm backdrop-blur-md",
           colorPair.shell,
           silhouetteClass[data.type],
+          healthStatusClass[data.status],
           isFocused
             ? "border-2 border-accent-primary shadow-[0_0_12px_color-mix(in_srgb,var(--accent-primary)_35%,transparent)]"
             : "border",
-        data.type === "gateway" &&
-          "before:pointer-events-none before:absolute before:-inset-1 before:rounded-full before:border before:border-border-default/50 before:content-['']"
-      )}
+          data.type === "gateway" &&
+            "before:pointer-events-none before:absolute before:-inset-1 before:rounded-full before:border before:border-border-default/50 before:content-['']"
+        )}
     >
       <NodeResizer
         isVisible={showResizer}
@@ -91,10 +101,12 @@ export function FoundationalNodeRenderer({
       <Handle
         type="target"
         position={Position.Top}
-        className={cn(
-          "!-top-1.5 !size-2 !bg-bg-surface",
-          isFocused ? "!border-accent-primary" : "!border-border-default"
-        )}
+        className="!-top-1 !h-2 !w-2 !rounded-full !border !border-zinc-900 !bg-zinc-100 !opacity-0 transition-opacity duration-200 group-hover:!opacity-100"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!-left-1 !h-2 !w-2 !rounded-full !border !border-zinc-900 !bg-zinc-100 !opacity-0 transition-opacity duration-200 group-hover:!opacity-100"
       />
       <div
         className="relative size-full"
@@ -116,14 +128,29 @@ export function FoundationalNodeRenderer({
             onClose={() => setIsEditingLabel(false)}
           />
         ) : null}
+        {showHealthMetrics ? (
+          <div
+            className={cn(
+              "pointer-events-none absolute right-1 bottom-1 rounded px-1 py-0.5 font-mono text-[9px] leading-none",
+              data.status === "outage"
+                ? "bg-red-950/90 text-red-300"
+                : "bg-amber-950/90 text-amber-200"
+            )}
+          >
+            {data.status === "outage" ? "OUT" : "DEG"} · {data.errorRate}% ·{" "}
+            {data.latency}ms
+          </div>
+        ) : null}
       </div>
       <Handle
         type="source"
         position={Position.Bottom}
-        className={cn(
-          "!-bottom-1.5 !size-2 !bg-bg-surface",
-          isFocused ? "!border-accent-primary" : "!border-border-default"
-        )}
+        className="!-bottom-1 !h-2 !w-2 !rounded-full !border !border-zinc-900 !bg-zinc-100 !opacity-0 transition-opacity duration-200 group-hover:!opacity-100"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!-right-1 !h-2 !w-2 !rounded-full !border !border-zinc-900 !bg-zinc-100 !opacity-0 transition-opacity duration-200 group-hover:!opacity-100"
       />
       </div>
     </>
